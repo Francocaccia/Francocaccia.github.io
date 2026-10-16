@@ -1,19 +1,37 @@
 ---
-// Gateway. Never redirects. Phase 0 placeholder; Phase 1 adds the door previews.
+// Gateway: pick a view. Never redirects; a remembered choice only reveals a "Continue in" chip.
 import GatewayLayout from '../layouts/GatewayLayout.astro';
 import { site, withBase } from '../lib/site';
 import { enabledModes } from '../config';
+import { previewCandles } from '../lib/charts';
 
 const modes = enabledModes();
+const candles = await previewCandles(240, 72, 11, 28);
+
+// A raw METAR for the aviation preview strip. Phase 3 replaces this with the real decoder's colors.
+const metar = site.weather.KABE;
+const tokenClass = (t: string) =>
+  /^[A-Z]{4}$/.test(t) ? 'm-stn'
+  : /^\d{6}Z$/.test(t) ? 'm-time'
+  : /KT$/.test(t) ? 'm-wind'
+  : /^(\d{4}|\d+SM)$/.test(t) ? 'm-vis'
+  : /^(FEW|SCT|BKN|OVC)/.test(t) ? 'm-cloud'
+  : /^M?\d{2}\/M?\d{2}$/.test(t) ? 'm-temp'
+  : /^[QA]\d{4}$/.test(t) ? 'm-qnh'
+  : 'm-rmk';
+const metarTokens = metar.raw.split(' ').filter((t) => !t.startsWith('T0') && t !== 'SLP168').slice(0, 9);
 ---
 
-<GatewayLayout title={site.name} description={`${site.name}: ${site.positioning} ${site.openTo}`}>
+<GatewayLayout title={site.name} description={`${site.name}: ${site.positioning} ${site.openTo} Three ways to read the same portfolio: aviation, terminal, finance.`}>
   <div class="wrap">
-    <h1>{site.name}</h1>
-    <p class="lead">{site.positioning}</p>
-    <p class="lead">{site.openTo}</p>
+    <header class="hero">
+      <p class="hero-kicker">{site.location}</p>
+      <h1>{site.name}</h1>
+      <p class="hero-lead">{site.positioning}</p>
+      <p class="hero-open">{site.openTo}</p>
+    </header>
 
-    <p class="continue">
+    <p class="continue" data-continue-slot>
       {
         modes.map((m) => (
           <a class="chip" href={withBase(m.path)} data-mode={m.id} data-continue-for={m.id} hidden>
@@ -23,14 +41,42 @@ const modes = enabledModes();
       }
     </p>
 
-    <h2 class="visually-hidden">Choose a view</h2>
+    <h2 class="pick">Pick a view</h2>
     <ul class="doors">
       {
         modes.map((m) => (
           <li>
-            <a class="door" href={withBase(m.path)} data-mode={m.id}>
+            <a class={`door door-${m.id}`} href={withBase(m.path)} data-mode={m.id}>
+              <span class="preview" aria-hidden="true">
+                {m.id === 'finance' && (
+                  <span class="pv pv-fin">
+                    <span class="pv-svg" set:html={candles.svg} />
+                    <span class="pv-tag">style preview</span>
+                  </span>
+                )}
+                {m.id === 'terminal' && (
+                  <span class="pv pv-term">
+                    <span class="pv-line"><span class="pv-ps">franco@portfolio:~$</span> cat about.md</span>
+                    <span class="pv-line pv-out">{site.name}, {site.location}</span>
+                    <span class="pv-line"><span class="pv-ps">franco@portfolio:~$</span> <span class="caret"></span></span>
+                  </span>
+                )}
+                {m.id === 'aviation' && (
+                  <span class="pv pv-avi">
+                    <span class="pv-metar">
+                      {metarTokens.map((t) => <span class={tokenClass(t)}>{t} </span>)}
+                    </span>
+                    <span class="pv-tag">sample METAR</span>
+                  </span>
+                )}
+              </span>
               <span class="door-name">{m.label}</span>
               <span class="door-promise">{m.promise}</span>
+              <span class="door-inside">
+                <span class="inside-h">Inside</span>
+                <span class="inside-list">{m.inside.join(' / ')}</span>
+              </span>
+              <span class="door-go">Open {m.label} view</span>
             </a>
           </li>
         ))
@@ -43,23 +89,40 @@ const modes = enabledModes();
 </GatewayLayout>
 
 <style>
-  .lead {
-    max-width: 44rem;
+  .hero {
+    padding-block: 8px 12px;
+  }
+  .hero-kicker {
+    margin: 0 0 8px;
     color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
   h1 {
-    font-size: clamp(2rem, 6vw, 3.25rem);
+    font-size: clamp(2.4rem, 8vw, 4.5rem);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.2em;
+  }
+  .hero-lead {
+    max-width: 40rem;
+    font-size: clamp(1.05rem, 2.4vw, 1.3rem);
+    margin-bottom: 0.4em;
+  }
+  .hero-open {
+    color: var(--fg-muted);
   }
   .continue {
-    min-height: 2.75rem;
-    margin-block: 24px 8px;
+    min-height: 44px;
+    margin-block: 20px 4px;
   }
   .chip {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    padding-inline: 16px;
-    border: 1px solid var(--line-strong);
+    padding-inline: 18px;
+    border: 1px solid var(--accent);
     border-radius: 999px;
     background: var(--bg-raised);
     color: var(--fg);
@@ -74,27 +137,38 @@ const modes = enabledModes();
     background: var(--bg-hover);
     color: var(--fg);
   }
+  .pick {
+    margin: 24px 0 14px;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
   .doors {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
     margin: 0 0 32px;
     padding: 0;
     list-style: none;
-    grid-template-columns: 1fr;
   }
-  @media (min-width: 860px) {
+  @media (min-width: 900px) {
     .doors {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
   .door {
+    --door: var(--accent);
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-height: 11rem;
-    padding: 20px;
+    gap: 10px;
+    height: 100%;
+    padding: 0 0 18px;
     border: 1px solid var(--line-strong);
-    border-radius: 8px;
+    border-top: 3px solid var(--door);
+    border-radius: 6px;
     background: var(--bg-raised);
     color: var(--fg);
     text-decoration: none;
@@ -103,13 +177,131 @@ const modes = enabledModes();
     background: var(--bg-hover);
     color: var(--fg);
   }
+  .door-finance { --door: #34d57a; }
+  .door-terminal { --door: #ff9a1f; }
+  .door-aviation { --door: #ffb000; }
+  .door > :not(.preview) {
+    margin-inline: 18px;
+  }
+  .preview {
+    display: block;
+    min-height: 118px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--line);
+    background: #05070a;
+  }
+  .pv {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-height: 118px;
+    padding: 14px 16px;
+  }
+  .pv-tag {
+    position: absolute;
+    right: 10px;
+    bottom: 6px;
+    color: #8a929b;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .pv-fin { background: #07111f; }
+  .pv-svg {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+  }
+  .pv-svg :global(.fcz-svg) {
+    width: 100%;
+    height: auto;
+  }
+  .pv-svg :global(.fcz-wick) { stroke-width: 1.2; }
+  .pv-svg :global(.fcz-wick.up) { stroke: #34d57a; }
+  .pv-svg :global(.fcz-wick.dn) { stroke: #ff6b6b; }
+  .pv-svg :global(.fcz-body.up) { fill: #34d57a; stroke: #34d57a; }
+  .pv-svg :global(.fcz-body.dn) { fill: #07111f; stroke: #ff6b6b; stroke-width: 1.2; }
+  .pv-term {
+    background: #000;
+    color: #ff9a1f;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.78rem;
+  }
+  .pv-line {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pv-ps { color: #b87a30; }
+  .pv-out { color: #ffb347; }
+  .caret {
+    display: inline-block;
+    width: 0.6em;
+    height: 1.05em;
+    vertical-align: text-bottom;
+    background: #ff9a1f;
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .caret { animation: none; }
+  }
+  .pv-avi {
+    background: #0a0c0d;
+    font-family: 'B612 Mono', ui-monospace, monospace;
+    font-size: 0.78rem;
+  }
+  .pv-metar {
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+  }
+  .m-stn { color: #ffb000; font-weight: 700; }
+  .m-time { color: #4fd0ea; }
+  .m-wind { color: #3fd16f; }
+  .m-vis { color: #4fd0ea; }
+  .m-cloud { color: #ffb000; }
+  .m-temp { color: #3fd16f; }
+  .m-qnh { color: #4fd0ea; }
+  .m-rmk { color: #92a09a; }
   .door-name {
     font-family: var(--font-mono);
-    font-size: 1.25rem;
+    font-size: 1.35rem;
     font-weight: 600;
   }
   .door-promise {
+    color: var(--fg);
+  }
+  .door-inside {
+    display: block;
     color: var(--fg-muted);
+    font-size: 0.88rem;
+  }
+  .inside-h {
+    display: block;
+    margin-bottom: 2px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .door-go {
+    margin-top: auto;
+    padding-top: 6px;
+    color: var(--link);
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+  }
+  .door-go::after {
+    content: ' →';
+  }
+  .quick {
+    margin-bottom: 4px;
   }
   .note {
     color: var(--fg-muted);

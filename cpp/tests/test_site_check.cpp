@@ -20,8 +20,12 @@ const char* kValidSite = R"({
   "skills":[{"name":"Go","group":"Languages","usedIn":["p1"]}],
   "airports":[{"icao":"KABE","name":"n","role":"r","lat":40.65,"lon":-75.44}],
   "weather":{"KABE":{"raw":"KABE 1","observedAt":"2026-10-16T17:51:00Z","sample":true}},
-  "bot":{"trackingSince":"2026-10-13","apiBase":"https://x",
-         "policyBands":[{"label":"Equities","min":40,"max":75}]}
+  "bot":{"trackingSince":"2026-10-13","apiBase":"https://x","statsPath":"/stats","historyPath":"/stats/history",
+         "timeoutMs":75000,
+         "policyBands":[{"label":"Equities","min":40,"max":75}],
+         "riskControls":["Long-only."],
+         "exampleDecision":{"action":"HOLD","conviction":5},
+         "decisionFlow":[{"step":"Model","text":"t"}]}
 })";
 
 Json load(const char* text) {
@@ -86,6 +90,15 @@ TEST(site_check_requires_policy_band_order) {
   bot.set("policyBands", load(R"([{"label":"x","min":60,"max":20}])"));
   site.set("bot", bot);
   CHECK_EQ(count(fc::checkSite(site, {}), Issue::Severity::Error), 1);
+}
+
+TEST(site_check_requires_risk_controls_and_sane_timeout) {
+  Json site = load(kValidSite);
+  Json bot = site.at("bot");
+  bot.set("riskControls", load("[]"));
+  bot.set("timeoutMs", 5);
+  site.set("bot", bot);
+  CHECK_EQ(count(fc::checkSite(site, {}), Issue::Severity::Error), 2);
 }
 
 TEST(api_version_and_errors) {

@@ -7,7 +7,10 @@ export interface ModeConfig {
   id: ModeId;
   label: string;
   path: string;
+  /** One line for the gateway door. */
   promise: string;
+  /** What is inside, shown under the promise. */
+  inside: string[];
   enabled: boolean;
 }
 
@@ -16,7 +19,8 @@ export const MODES: ModeConfig[] = [
     id: 'aviation',
     label: 'Aviation',
     path: '/aviation/',
-    promise: 'Pilot and engineer view: route map, live-format weather, METAR and TAF decoders.',
+    promise: 'The pilot and engineer read: route, weather and the math behind a flight.',
+    inside: ['Route map, SABE to KLYH to KABE', 'METAR and TAF decoders', 'Crosswind calculator', 'Pilot card'],
     enabled: true,
   },
   {
@@ -24,13 +28,15 @@ export const MODES: ModeConfig[] = [
     label: 'Terminal',
     path: '/terminal/',
     promise: 'A real shell in the browser. Type help, or click a command.',
+    inside: ['Projects, experience and contact as files', 'ls, cat, grep, tree and more', 'Click-to-run command list'],
     enabled: true,
   },
   {
     id: 'finance',
     label: 'Finance',
     path: '/finance/',
-    promise: 'Investment-panel view: the trading bot, benchmarks, policy bands and a project watchlist.',
+    promise: 'The investment-panel read: a paper-trading bot against its benchmarks.',
+    inside: ['AutoTradingBot candles vs SPY and 60/40', 'Project watchlist and skill heatmap', 'Policy bands and risk controls'],
     enabled: true,
   },
 ];

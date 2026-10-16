@@ -21,8 +21,8 @@ runEmcc([
   '-std=c++20', '-O1', '-Wall', '-Wextra',
   '-fwasm-exceptions',
   '-sENVIRONMENT=node', '-sNODERAWFS=1',
-  '-o', 'build/tests.js',
+  '-o', 'build/tests.cjs',
 ]);
 
-const run = spawnSync(process.execPath, [join(outDir, 'tests.js')], { stdio: 'inherit' });
+const run = spawnSync(process.execPath, [join(outDir, 'tests.cjs')], { stdio: 'inherit' });
 process.exit(run.status ?? 1);

@@ -1,11 +1,332 @@
 ---
+// Finance view: an investment-panel read of the same facts.
+// Everything is static HTML. The chart and tiles show an honest fallback until the
+// bot's public feeds answer; src/scripts/finance-live.ts upgrades them in the browser.
 import FinanceLayout from '../../layouts/FinanceLayout.astro';
-import { site } from '../../lib/site';
+import { site, real } from '../../lib/site';
+import { illustrativeChart } from '../../lib/charts';
+
+const bot = site.bot;
+const wide = await illustrativeChart('wide');
+const narrow = await illustrativeChart('narrow');
+
+const tiles = [
+  { id: 'return', label: 'Return' },
+  { id: 'vs_spy', label: 'vs SPY' },
+  { id: 'vs_6040', label: 'vs 60/40' },
+  { id: 'max_drawdown', label: 'Max drawdown' },
+];
+
+const atb = site.projects[0];
+
+// Skill heatmap: skills by place of use. Intensity is how many built things use the skill.
+const places = [
+  ...site.projects.map((p) => ({ id: p.id, tag: p.tag, built: p.status === 'live' || p.status === 'shipped', name: p.name })),
+  ...site.experience.map((e) => ({ id: e.id, tag: e.tag, built: true, name: `${e.role}, ${e.org}` })),
+];
+const skillRows = site.skills
+  .map((s) => ({ ...s, builtCount: s.usedIn.filter((id) => places.find((p) => p.id === id)?.built).length }))
+  .sort((a, b) => b.builtCount - a.builtCount || a.name.localeCompare(b.name));
+
+const certStatus: Record<string, string> = { active: 'Active', 'in-progress': 'In progress', complete: 'Complete' };
+const email = real(site.email);
+const resume = real(site.resume);
+const statusClass = (s: string) => `st st-${s}`;
+const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', next: 'Up next', planned: 'Planned' };
 ---
 
-<FinanceLayout title="Finance view" description={`${site.name}: investment-panel view of the AutoTradingBot paper-trading project, benchmarks and project watchlist.`}>
-  <div class="wrap">
-    <h1>Finance view</h1>
-    <p>Placeholder. The investment panel is built in Phase 1.</p>
+<FinanceLayout
+  title="Finance view"
+  description={`${site.name}: ${site.positioning} A paper-trading bot against SPY and a 60/40 portfolio, project watchlist, policy bands and risk controls. Paper trading only.`}
+>
+  <div
+    class="wrap fin"
+    data-finance
+    data-api-base={bot.apiBase}
+    data-stats-path={bot.statsPath}
+    data-history-path={bot.historyPath}
+    data-timeout={bot.timeoutMs}
+    data-tracking-since={bot.trackingSince}
+  >
+    <header class="fin-head">
+      <p class="eyebrow">Investment panel / paper trading only</p>
+      <h1>{site.name}</h1>
+      <p class="fin-lead">{site.positioning}</p>
+      <ul class="tape" aria-label="Project symbols and status">
+        {
+          site.projects.map((p) => (
+            <li>
+              <a href={`#w-${p.id}`}>
+                <span class="sym">{p.tag}</span> <span class={statusClass(p.status)}>{statusWord[p.status]}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="fin-links">
+        <a href={site.links.github}>GitHub</a>
+        <a href={site.links.linkedin}>LinkedIn</a>
+        {email ? <a href={`mailto:${email}`}>{email}</a> : <span class="todo">email: TODO</span>}
+        {resume ? <a href={resume}>Resume</a> : <span class="todo">resume: TODO</span>}
+      </p>
+    </header>
+
+    <section class="panel" aria-labelledby="bot-h">
+      <div class="panel-head">
+        <h2 id="bot-h">{atb.name} <span class="sym">{atb.tag}</span></h2>
+        <p><span class={statusClass(atb.status)}>{atb.statusLabel}</span></p>
+      </div>
+      <p class="panel-sub">
+        Long-only portfolio manager in Go, benchmarked against SPY and a 60/40 portfolio. Percentages only, indexed to 100 on
+        {bot.trackingSince}. No positions, amounts or share counts are shown.
+      </p>
+
+      <dl class="tiles" data-tiles>
+        {
+          tiles.map((t) => (
+            <div class="tile" data-tile={t.id} data-tone="none">
+              <dt>{t.label}</dt>
+              <dd data-value>—</dd>
+              <p class="tile-cap" data-caption>tracking since {bot.trackingSince}</p>
+            </div>
+          ))
+        }
+      </dl>
+      <p class="tiles-note" data-tiles-note>Tiles fill in from the bot's public stats when they load.</p>
+
+      <div class="chart-card">
+        <p class="chart-notice" role="status" data-chart-notice data-state="static">
+          <span class="notice-dot" aria-hidden="true"></span>
+          <span data-notice-text>
+            Illustrative data shown, not real results. Live data warming up: it appears here once the bot's history feed has
+            enough days.
+          </span>
+        </p>
+        <ul class="legend" aria-label="Chart key">
+          <li><span class="key key-candle" aria-hidden="true"></span>Bot, daily candle (filled = up day, hollow = down day)</li>
+          <li><span class="key key-spy" aria-hidden="true"></span>SPY</li>
+          <li><span class="key key-mix" aria-hidden="true"></span>60/40 (SPY/AGG)</li>
+        </ul>
+        <div
+          class="fcz"
+          data-fcz
+          tabindex="0"
+          role="group"
+          aria-label="Candlestick chart. Use the left and right arrow keys to inspect each day."
+        >
+          <div class="fcz-view wide" data-variant="wide" data-points={JSON.stringify(wide.points)} data-plot={JSON.stringify(wide.plot)} set:html={wide.svg} />
+          <div class="fcz-view narrow" data-variant="narrow" data-points={JSON.stringify(narrow.points)} data-plot={JSON.stringify(narrow.plot)} set:html={narrow.svg} />
+          <div class="fcz-tip" data-tip hidden></div>
+          <p class="visually-hidden" aria-live="polite" data-fcz-live></p>
+        </div>
+        <p class="chart-foot" data-chart-foot>Indexed to 100 at the start. Hover or focus the chart for daily values.</p>
+        <details class="table-view">
+          <summary>Table view</summary>
+          <div class="scroll" tabindex="0" role="region" aria-label="Chart values as a table" data-table-host set:html={wide.table} />
+        </details>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="watch-h" id="watchlist">
+      <div class="panel-head">
+        <h2 id="watch-h">Watchlist</h2>
+        <p class="panel-meta">Projects, by symbol</p>
+      </div>
+      <div class="scroll" tabindex="0" role="region" aria-label="Project watchlist table">
+        <table class="data">
+          <thead>
+            <tr>
+              <th scope="col">Symbol</th>
+              <th scope="col">Project</th>
+              <th scope="col">Status</th>
+              <th scope="col">Stack</th>
+              <th scope="col">Repo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              site.projects.map((p) => (
+                <tr id={`w-${p.id}`}>
+                  <th scope="row"><span class="sym">{p.tag}</span></th>
+                  <td>
+                    <strong>{p.name}</strong>
+                    <span class="row-sub">{p.summary}</span>
+                  </td>
+                  <td><span class={statusClass(p.status)}>{p.statusLabel}</span></td>
+                  <td class="chips">{p.stack.map((s) => <span class="chip">{s}</span>)}</td>
+                  <td>{p.repo ? <a href={p.repo}>GitHub</a> : <span class="muted">No public repo</span>}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="grid-2">
+      <section class="panel" aria-labelledby="policy-h">
+        <div class="panel-head">
+          <h2 id="policy-h">Policy bands</h2>
+          <p class="panel-meta">Share of the portfolio</p>
+        </div>
+        <ul class="bands">
+          {
+            bot.policyBands.map((b) => (
+              <li>
+                <span class="band-name">{b.label}</span>
+                <span
+                  class="band-track"
+                  role="img"
+                  aria-label={`${b.label} policy range: ${b.min} to ${b.max} percent of the portfolio`}
+                >
+                  <span class="band-fill" style={`left:${b.min}%;width:${b.max - b.min}%`}></span>
+                </span>
+                <span class="band-val">{b.min}–{b.max}%</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="axis" aria-hidden="true"><span>0%</span><span>50%</span><span>100%</span></p>
+      </section>
+
+      <section class="panel" aria-labelledby="risk-h">
+        <div class="panel-head">
+          <h2 id="risk-h">Risk controls</h2>
+          <p class="panel-meta">Enforced in code</p>
+        </div>
+        <ul class="checks">
+          {bot.riskControls.map((r) => <li>{r}</li>)}
+        </ul>
+      </section>
+    </div>
+
+    <section class="panel" aria-labelledby="anat-h">
+      <div class="panel-head">
+        <h2 id="anat-h">Anatomy of a decision</h2>
+        <p class="panel-meta"><span class="st st-example">Example, not a real decision</span></p>
+      </div>
+      <div class="anatomy">
+        <pre class="code" tabindex="0" aria-label="Example model reply, as JSON"><code>{JSON.stringify(bot.exampleDecision, null, 2)}</code></pre>
+        <ol class="flow">
+          {
+            bot.decisionFlow.map((f) => (
+              <li>
+                <strong>{f.step}</strong>
+                <span>{f.text}</span>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="heat-h">
+      <div class="panel-head">
+        <h2 id="heat-h">Skill heatmap</h2>
+        <p class="panel-meta">Where each skill is used</p>
+      </div>
+      <div class="scroll" tabindex="0" role="region" aria-label="Skill heatmap table">
+        <table class="data heat">
+          <thead>
+            <tr>
+              <th scope="col">Skill</th>
+              {places.map((p) => <th scope="col" title={p.name}>{p.tag}</th>)}
+              <th scope="col">Built</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              skillRows.map((s) => (
+                <tr>
+                  <th scope="row">{s.name}<span class="row-sub">{s.group}</span></th>
+                  {places.map((p) => {
+                    const used = s.usedIn.includes(p.id);
+                    const cls = !used ? 'cell' : p.built ? `cell on l${Math.min(s.builtCount, 3)}` : 'cell plan';
+                    const word = !used ? 'not used' : p.built ? 'used' : 'planned';
+                    return <td class={cls}><span class="visually-hidden">{word}</span></td>;
+                  })}
+                  <td class="num">{s.builtCount}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      <ul class="heat-key" aria-label="Heatmap key">
+        <li><span class="swatch on l1"></span>Used in 1 built thing</li>
+        <li><span class="swatch on l2"></span>2</li>
+        <li><span class="swatch on l3"></span>3 or more</li>
+        <li><span class="swatch plan"></span>Planned, not built yet</li>
+      </ul>
+      <p class="row-sub">
+        Columns: {places.map((p) => `${p.tag} = ${p.name}`).join('; ')}.
+      </p>
+    </section>
+
+    <div class="grid-2">
+      <section class="panel" aria-labelledby="pos-h">
+        <div class="panel-head">
+          <h2 id="pos-h">Positions</h2>
+          <p class="panel-meta">Experience</p>
+        </div>
+        <ul class="timeline">
+          {
+            site.experience.map((e) => (
+              <li>
+                <p class="when">{e.start} to {e.end}</p>
+                <p><strong>{e.role}</strong>, {e.org}</p>
+                <p class="muted">{e.description}</p>
+              </li>
+            ))
+          }
+        </ul>
+        <h3 class="sub-h">Education</h3>
+        <ul class="timeline">
+          {
+            site.education.map((e) => (
+              <li>
+                <p class="when">{e.period.startsWith('TODO') ? <span class="todo">years: TODO</span> : e.period}</p>
+                <p><strong>{e.degree}</strong>, {e.school}</p>
+              </li>
+            ))
+          }
+        </ul>
+        <h3 class="sub-h">Languages</h3>
+        <p class="muted">{site.languages.map((l) => `${l.name} (${l.level})`).join(', ')}</p>
+      </section>
+
+      <section class="panel" aria-labelledby="lic-h">
+        <div class="panel-head">
+          <h2 id="lic-h">Licenses</h2>
+          <p class="panel-meta">Certifications</p>
+        </div>
+        <div class="scroll" tabindex="0" role="region" aria-label="Licenses table">
+          <table class="data">
+            <thead>
+              <tr>
+                <th scope="col">License</th>
+                <th scope="col">Issuer</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                site.certifications.map((c) => (
+                  <tr>
+                    <th scope="row">{c.name}</th>
+                    <td>{'issuer' in c ? c.issuer : <span class="muted">—</span>}</td>
+                    <td><span class={`st st-cert-${c.status}`}>{certStatus[c.status]}</span></td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </div>
 </FinanceLayout>
+
+<script>
+  import '../../scripts/finance-live';
+</script>

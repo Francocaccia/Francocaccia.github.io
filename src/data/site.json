@@ -58,6 +58,7 @@
   "experience": [
     {
       "id": "exp-lehigh",
+      "tag": "LEH",
       "role": "Finance & Data Research Assistant",
       "org": "Lehigh University",
       "start": "2026",
@@ -66,6 +67,7 @@
     },
     {
       "id": "exp-fund",
+      "tag": "FUND",
       "role": "Quant Analyst & CS Intern",
       "org": "Student-managed investment fund",
       "start": "2025",
@@ -139,10 +141,34 @@
   "bot": {
     "apiBase": "https://autotradingbot-kjr0.onrender.com",
     "trackingSince": "2026-10-13",
+    "statsPath": "/stats",
+    "historyPath": "/stats/history",
+    "timeoutMs": 75000,
     "policyBands": [
       { "label": "Equities", "min": 40, "max": 75 },
       { "label": "Bonds", "min": 15, "max": 40 },
       { "label": "Cash", "min": 5, "max": 30 }
+    ],
+    "riskControls": [
+      "Long-only: no shorting, margin, leverage or options.",
+      "Position size scales with the model's conviction, under position and sector caps.",
+      "Every entry is a bracket order: a server-side stop-loss and take-profit set from ATR.",
+      "Reward-to-risk of at least 2 to 1 before an order is placed.",
+      "Circuit breakers in the risk layer.",
+      "Universe filters on exchange, price and volume. No leveraged ETFs or warrants.",
+      "Limits live in code, not in the prompt."
+    ],
+    "exampleDecision": {
+      "action": "BUY",
+      "conviction": 7,
+      "thesis": "Example only. A one-line reason goes here.",
+      "reasoning": "Example only. The model cites the indicators and news it was given.",
+      "suggested_tickers": []
+    },
+    "decisionFlow": [
+      { "step": "Model", "text": "Replies with JSON like the example: an action, a conviction from 1 to 10, a thesis and its reasoning." },
+      { "step": "Risk checks", "text": "Code sizes the position from conviction, applies position and sector caps, and requires reward-to-risk of at least 2." },
+      { "step": "Execution", "text": "A market entry on Alpaca with server-side stop-loss and take-profit legs." }
     ]
   }
 }

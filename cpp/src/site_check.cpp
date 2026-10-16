@@ -155,6 +155,33 @@ void checkBot(Checker& c, const Json& bot) {
 
   c.need(bot, "bot", "trackingSince", Json::Type::String);
   c.need(bot, "bot", "apiBase", Json::Type::String);
+  c.need(bot, "bot", "statsPath", Json::Type::String);
+  c.need(bot, "bot", "historyPath", Json::Type::String);
+  const Json* timeout = c.need(bot, "bot", "timeoutMs", Json::Type::Number);
+  if (timeout && (timeout->asNumber() < 1000 || timeout->asNumber() > 300000)) {
+    c.error("bot.timeoutMs", "must be between 1000 and 300000");
+  }
+  if (const Json* controls = c.need(bot, "bot", "riskControls", Json::Type::Array)) {
+    if (controls->items().empty()) c.error("bot.riskControls", "must not be empty");
+    std::size_t i = 0;
+    for (const Json& item : controls->items()) {
+      if (!item.isString() || item.asString().empty()) {
+        c.error("bot.riskControls[" + std::to_string(i) + "]", "must be a non-empty string");
+      }
+      ++i;
+    }
+  }
+  if (const Json* decision = c.need(bot, "bot", "exampleDecision", Json::Type::Object)) {
+    c.need(*decision, "bot.exampleDecision", "action", Json::Type::String);
+  }
+  if (const Json* flow = c.need(bot, "bot", "decisionFlow", Json::Type::Array)) {
+    std::size_t i = 0;
+    for (const Json& step : flow->items()) {
+      std::string path = "bot.decisionFlow[" + std::to_string(i++) + "]";
+      c.need(step, path, "step", Json::Type::String);
+      c.need(step, path, "text", Json::Type::String);
+    }
+  }
   const Json* bands = c.need(bot, "bot", "policyBands", Json::Type::Array);
   if (bands) {
     std::size_t i = 0;
