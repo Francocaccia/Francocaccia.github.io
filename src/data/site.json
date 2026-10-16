@@ -1,0 +1,148 @@
+{
+  "name": "Franco Caccia",
+  "location": "Pennsylvania, USA",
+  "positioning": "Quant and software developer. M.S. student in Aerospace & Space Systems Engineering. Instrument-rated commercial pilot.",
+  "openTo": "Open to quant, software and aviation-tech roles.",
+  "links": {
+    "github": "https://github.com/Francocaccia",
+    "linkedin": "https://www.linkedin.com/in/franco-caccia-37b5a1177/"
+  },
+  "email": "TODO: add email address",
+  "resume": "TODO: add resume path, for example /resume.pdf",
+  "photo": "TODO: add photo path, for example /franco.jpg",
+  "footer": "Paper trading only. Nothing here is investment advice.",
+
+  "projects": [
+    {
+      "id": "autotradingbot",
+      "name": "AutoTradingBot",
+      "tag": "ATB",
+      "status": "live",
+      "statusLabel": "Live, paper trading",
+      "summary": "Autonomous long-only portfolio manager in Go. Indicators, news and an LLM decide buy, sell or hold across stocks, ETFs, bond ETFs and cash. Bracket orders on Alpaca, risk limits enforced in code. Benchmarked against SPY and a 60/40 portfolio.",
+      "stack": ["Go", "Python", "Gemini", "Alpaca", "Docker", "Render"],
+      "repo": "https://github.com/Francocaccia/AutoTradingBot"
+    },
+    {
+      "id": "stock-quant-reports",
+      "name": "Stock-Quant-Reports",
+      "tag": "SQR",
+      "status": "shipped",
+      "statusLabel": "Shipped, public",
+      "summary": "Equity report generator for a student-managed investment fund: ticker in, two-page PDF out with weekly and monthly indicators, charts, narrative and a rule-based signal.",
+      "stack": ["Go", "React", "MongoDB", "Firebase"],
+      "repo": "https://github.com/Francocaccia/Stock-Quant-Reports"
+    },
+    {
+      "id": "defi-lending",
+      "name": "DeFi lending protocol",
+      "tag": "DEFI",
+      "status": "next",
+      "statusLabel": "Up next",
+      "summary": "Overcollateralized lending with Chainlink price feeds.",
+      "stack": ["Solidity", "Foundry", "Chainlink"],
+      "repo": null
+    },
+    {
+      "id": "mev-and-chain",
+      "name": "MEV sandwich detector and mini blockchain",
+      "tag": "MEV",
+      "status": "planned",
+      "statusLabel": "Planned",
+      "summary": "A MEV sandwich detector and a mini blockchain, both in Go.",
+      "stack": ["Go"],
+      "repo": null
+    }
+  ],
+
+  "experience": [
+    {
+      "id": "exp-lehigh",
+      "role": "Finance & Data Research Assistant",
+      "org": "Lehigh University",
+      "start": "2026",
+      "end": "present",
+      "description": "Python pipelines that extract securities-lending data from SEC filings."
+    },
+    {
+      "id": "exp-fund",
+      "role": "Quant Analyst & CS Intern",
+      "org": "Student-managed investment fund",
+      "start": "2025",
+      "end": "2026",
+      "description": "Market analysis and an automated stock-analysis system."
+    }
+  ],
+
+  "education": [
+    {
+      "degree": "M.S. Aerospace & Space Systems Engineering",
+      "school": "Lehigh University",
+      "period": "2026 to present"
+    },
+    {
+      "degree": "B.S. Computer Science, minors in Mathematics and Business",
+      "school": "University of Lynchburg",
+      "period": "TODO: add years"
+    }
+  ],
+
+  "certifications": [
+    { "name": "Commercial Pilot + Instrument Rating", "issuer": "ANAC (Argentina)", "status": "active" },
+    { "name": "Commercial Pilot", "issuer": "FAA", "status": "in-progress" },
+    { "name": "Flight Dispatcher", "status": "in-progress" },
+    { "name": "Restricted Radiotelephone Operator", "issuer": "FCC", "status": "active" },
+    { "name": "Bloomberg Market Concepts", "issuer": "Bloomberg", "status": "complete" }
+  ],
+
+  "languages": [
+    { "name": "Spanish", "level": "native" },
+    { "name": "English", "level": "bilingual" },
+    { "name": "Portuguese", "level": "fluent" },
+    { "name": "Chinese", "level": "basic" }
+  ],
+
+  "skills": [
+    { "name": "Go", "group": "Languages", "state": "used", "usedIn": ["autotradingbot", "stock-quant-reports", "mev-and-chain"] },
+    { "name": "Python", "group": "Languages", "state": "used", "usedIn": ["autotradingbot", "exp-lehigh"] },
+    { "name": "Solidity", "group": "Languages", "state": "upcoming", "usedIn": ["defi-lending"] },
+    { "name": "React", "group": "Frontend", "state": "used", "usedIn": ["stock-quant-reports"] },
+    { "name": "MongoDB", "group": "Data", "state": "used", "usedIn": ["stock-quant-reports"] },
+    { "name": "Firebase", "group": "Data", "state": "used", "usedIn": ["stock-quant-reports"] },
+    { "name": "Docker", "group": "Infrastructure", "state": "used", "usedIn": ["autotradingbot"] },
+    { "name": "Render", "group": "Infrastructure", "state": "used", "usedIn": ["autotradingbot"] },
+    { "name": "Alpaca", "group": "APIs and models", "state": "used", "usedIn": ["autotradingbot"] },
+    { "name": "Gemini", "group": "APIs and models", "state": "used", "usedIn": ["autotradingbot"] },
+    { "name": "Chainlink", "group": "APIs and models", "state": "upcoming", "usedIn": ["defi-lending"] },
+    { "name": "Foundry", "group": "Tooling", "state": "upcoming", "usedIn": ["defi-lending"] }
+  ],
+
+  "airports": [
+    { "icao": "SABE", "name": "Buenos Aires Aeroparque", "role": "Home", "lat": -34.5592, "lon": -58.4156 },
+    { "icao": "KLYH", "name": "Lynchburg Regional", "role": "B.S.", "lat": 37.3267, "lon": -79.2004 },
+    { "icao": "KABE", "name": "Lehigh Valley Intl", "role": "M.S.", "lat": 40.6522, "lon": -75.4408 }
+  ],
+
+  "weather": {
+    "SABE": {
+      "raw": "SABE 161800Z 18010KT 9999 FEW030 22/14 Q1015",
+      "observedAt": "2026-10-16T18:00:00Z",
+      "sample": true
+    },
+    "KABE": {
+      "raw": "KABE 161751Z 27008KT 10SM FEW050 BKN250 18/09 A3002 RMK AO2 SLP168 T01830094",
+      "observedAt": "2026-10-16T17:51:00Z",
+      "sample": true
+    }
+  },
+
+  "bot": {
+    "apiBase": "https://autotradingbot-kjr0.onrender.com",
+    "trackingSince": "2026-10-13",
+    "policyBands": [
+      { "label": "Equities", "min": 40, "max": 75 },
+      { "label": "Bonds", "min": 15, "max": 40 },
+      { "label": "Cash", "min": 5, "max": 30 }
+    ]
+  }
+}

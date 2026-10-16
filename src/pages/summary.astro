@@ -1,0 +1,76 @@
+---
+// Plain "Quick view": the same facts, no theme. Always available, readable without JavaScript.
+import GatewayLayout from '../layouts/GatewayLayout.astro';
+import { site, real } from '../lib/site';
+
+const email = real(site.email);
+const resume = real(site.resume);
+---
+
+<GatewayLayout
+  title="Summary and resume"
+  description={`${site.name}: ${site.positioning} ${site.openTo}`}
+  current="summary"
+>
+  <div class="wrap">
+    <h1>{site.name}</h1>
+    <p>{site.location}</p>
+    <p>{site.positioning} {site.openTo}</p>
+
+    <p>
+      <a href={site.links.github}>GitHub</a> ·
+      <a href={site.links.linkedin}>LinkedIn</a> ·
+      {email ? <a href={`mailto:${email}`}>{email}</a> : <span class="todo">email: TODO</span>} ·
+      {resume ? <a href={resume}>Resume (PDF)</a> : <span class="todo">resume: TODO</span>}
+    </p>
+
+    <h2>Projects</h2>
+    <ul>
+      {
+        site.projects.map((p) => (
+          <li>
+            <strong>{p.repo ? <a href={p.repo}>{p.name}</a> : p.name}</strong> ({p.statusLabel}). {p.summary}{' '}
+            <em>Stack: {p.stack.join(', ')}.</em>
+          </li>
+        ))
+      }
+    </ul>
+
+    <h2>Experience</h2>
+    <ul>
+      {
+        site.experience.map((e) => (
+          <li>
+            <strong>{e.role}</strong>, {e.org} ({e.start} to {e.end}). {e.description}
+          </li>
+        ))
+      }
+    </ul>
+
+    <h2>Education</h2>
+    <ul>
+      {
+        site.education.map((e) => (
+          <li>
+            {e.degree}, {e.school} (
+            {e.period.startsWith('TODO') ? <span class="todo">years: TODO</span> : e.period})
+          </li>
+        ))
+      }
+    </ul>
+
+    <h2>Certifications</h2>
+    <ul>
+      {
+        site.certifications.map((c) => (
+          <li>
+            {'issuer' in c ? `${c.issuer} ` : ''}{c.name}: {c.status}
+          </li>
+        ))
+      }
+    </ul>
+
+    <h2>Languages</h2>
+    <p>{site.languages.map((l) => `${l.name} (${l.level})`).join(', ')}</p>
+  </div>
+</GatewayLayout>

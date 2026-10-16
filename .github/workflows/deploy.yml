@@ -1,0 +1,63 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.12
+          actions-cache-folder: emsdk-cache
+
+      - run: npm ci
+
+      # Same sources, native compiler: catches warnings Emscripten does not report.
+      - name: Native C++ tests
+        run: |
+          mkdir -p build
+          g++ -std=c++20 -Wall -Wextra -Icpp/include -Icpp/tests cpp/src/*.cpp cpp/tests/*.cpp -o build/native-tests
+          ./build/native-tests
+
+      - name: C++ tests (WebAssembly build, run under Node)
+        run: npm test
+
+      # Optional repository secret PRIVATE_TERMS: comma-separated names that must never appear on the site.
+      - name: Build site
+        run: npm run build
+        env:
+          PRIVATE_TERMS: ${{ secrets.PRIVATE_TERMS }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

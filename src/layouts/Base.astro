@@ -1,0 +1,65 @@
+---
+// Shared shell for every page: SEO, top bar with the mode switcher, footer.
+// Mode layouts wrap this and add their fonts and theme.
+import '../styles/base.css';
+import '../styles/switcher.css';
+import '../styles/themes.css';
+import ModeSwitcher from '../components/ModeSwitcher.astro';
+import { site, withBase } from '../lib/site';
+import { coreVersion } from '../lib/core';
+import type { ModeId } from '../config';
+
+interface Props {
+  title: string;
+  description: string;
+  current: ModeId | 'gateway' | 'summary';
+  theme?: 'gateway' | 'finance' | 'terminal' | 'aviation';
+}
+
+const { title, description, current, theme = 'gateway' } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const fullTitle = title === site.name ? title : `${title} | ${site.name}`;
+const coreV = await coreVersion();
+---
+
+<!doctype html>
+<html lang="en" data-theme={theme} data-page={current}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <meta name="generator" content={`Astro, fc-core ${coreV}`} />
+    <meta name="theme-color" content="#0e1013" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="fc-bar">
+      <a class="fc-brand" href={withBase('/')}>{site.name}</a>
+      <ModeSwitcher current={current} />
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="fc-footer">
+      <div class="wrap">
+        <p>{site.footer}</p>
+      </div>
+    </footer>
+    <script>
+      import '../scripts/mode';
+    </script>
+  </body>
+</html>

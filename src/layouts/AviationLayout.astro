@@ -1,0 +1,18 @@
+---
+import '@fontsource/b612/latin-400.css';
+import '@fontsource/b612/latin-700.css';
+import '@fontsource/b612-mono/latin-400.css';
+import '@fontsource/b612-mono/latin-700.css';
+import Base from './Base.astro';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<Base title={title} description={description} current="aviation" theme="aviation">
+  <slot />
+</Base>

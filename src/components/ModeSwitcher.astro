@@ -1,0 +1,41 @@
+---
+// The switcher lives in the top bar, top right, on every page of every mode.
+import { enabledModes, type ModeId } from '../config';
+import { withBase } from '../lib/site';
+
+interface Props {
+  /** Current mode, or "gateway" / "summary" for pages outside a mode. */
+  current: ModeId | 'gateway' | 'summary';
+}
+
+const { current } = Astro.props;
+const modes = enabledModes();
+const currentLabel =
+  current === 'gateway' ? 'Choose' : current === 'summary' ? 'Summary' : (modes.find((m) => m.id === current)?.label ?? 'Choose');
+---
+
+<nav class="fc-switch" aria-label="Switch view">
+  <details>
+    <summary>
+      <span class="fc-switch-label">View</span>
+      <span class="fc-switch-current">{currentLabel}</span>
+    </summary>
+    <ul>
+      <li>
+        <a href={withBase('/')} aria-current={current === 'gateway' ? 'page' : undefined}>All views</a>
+      </li>
+      {
+        modes.map((m) => (
+          <li>
+            <a href={withBase(m.path)} data-mode={m.id} aria-current={current === m.id ? 'page' : undefined}>
+              {m.label}
+            </a>
+          </li>
+        ))
+      }
+      <li>
+        <a href={withBase('/summary/')} aria-current={current === 'summary' ? 'page' : undefined}>Quick view</a>
+      </li>
+    </ul>
+  </details>
+</nav>

@@ -1,0 +1,118 @@
+---
+// Gateway. Never redirects. Phase 0 placeholder; Phase 1 adds the door previews.
+import GatewayLayout from '../layouts/GatewayLayout.astro';
+import { site, withBase } from '../lib/site';
+import { enabledModes } from '../config';
+
+const modes = enabledModes();
+---
+
+<GatewayLayout title={site.name} description={`${site.name}: ${site.positioning} ${site.openTo}`}>
+  <div class="wrap">
+    <h1>{site.name}</h1>
+    <p class="lead">{site.positioning}</p>
+    <p class="lead">{site.openTo}</p>
+
+    <p class="continue">
+      {
+        modes.map((m) => (
+          <a class="chip" href={withBase(m.path)} data-mode={m.id} data-continue-for={m.id} hidden>
+            Continue in {m.label}
+          </a>
+        ))
+      }
+    </p>
+
+    <h2 class="visually-hidden">Choose a view</h2>
+    <ul class="doors">
+      {
+        modes.map((m) => (
+          <li>
+            <a class="door" href={withBase(m.path)} data-mode={m.id}>
+              <span class="door-name">{m.label}</span>
+              <span class="door-promise">{m.promise}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="quick"><a href={withBase('/summary/')}>Quick view: summary + resume</a></p>
+    <p class="note">Switch anytime from the top right.</p>
+  </div>
+</GatewayLayout>
+
+<style>
+  .lead {
+    max-width: 44rem;
+    color: var(--fg-muted);
+  }
+  h1 {
+    font-size: clamp(2rem, 6vw, 3.25rem);
+  }
+  .continue {
+    min-height: 2.75rem;
+    margin-block: 24px 8px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 16px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--bg-raised);
+    color: var(--fg);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+  .chip[hidden] {
+    display: none;
+  }
+  .chip:hover {
+    background: var(--bg-hover);
+    color: var(--fg);
+  }
+  .doors {
+    display: grid;
+    gap: 16px;
+    margin: 0 0 32px;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 860px) {
+    .doors {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .door {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 11rem;
+    padding: 20px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--bg-raised);
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .door:hover {
+    background: var(--bg-hover);
+    color: var(--fg);
+  }
+  .door-name {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  .door-promise {
+    color: var(--fg-muted);
+  }
+  .note {
+    color: var(--fg-muted);
+    font-size: 0.9rem;
+  }
+</style>

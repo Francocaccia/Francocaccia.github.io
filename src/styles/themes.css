@@ -1,0 +1,74 @@
+/* Per-mode design tokens. A page sets <html data-theme="...">. */
+
+:root,
+:root[data-theme='gateway'] {
+  --bg: #0e1013;
+  --bg-raised: #161a1f;
+  --bg-hover: #1f252c;
+  --bar-bg: #0e1013;
+  --fg: #e9ecef;
+  --fg-muted: #9aa3ad;
+  --accent: #d5dce4;
+  --line: #232a31;
+  --line-strong: #3a444e;
+  --link: #7cc4ff;
+  --link-hover: #b3dcff;
+  --focus: #ffd166;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+:root[data-theme='finance'] {
+  --bg: #07111f;
+  --bg-raised: #0d1b30;
+  --bg-hover: #14274a;
+  --bar-bg: #07111f;
+  --fg: #e4ecf7;
+  --fg-muted: #8da2bd;
+  --accent: #34d57a;
+  --positive: #34d57a;
+  --negative: #ff6b6b;
+  --line: #172a45;
+  --line-strong: #2a4468;
+  --link: #6fb7ff;
+  --link-hover: #a8d3ff;
+  --focus: #ffd166;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+:root[data-theme='terminal'] {
+  --bg: #000;
+  --bg-raised: #0c0a07;
+  --bg-hover: #1a1409;
+  --bar-bg: #000;
+  --fg: #ff9a1f;
+  --fg-muted: #b87a30;
+  --accent: #ffb347;
+  --line: #2a1d0a;
+  --line-strong: #5a3a0f;
+  --link: #ffc266;
+  --link-hover: #ffe0a8;
+  --focus: #ffffff;
+  --font-body: 'JetBrains Mono', ui-monospace, monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+:root[data-theme='aviation'] {
+  --bg: #0a0c0d;
+  --bg-raised: #121618;
+  --bg-hover: #1b2124;
+  --bar-bg: #0a0c0d;
+  --fg: #e6ebe8;
+  --fg-muted: #92a09a;
+  --accent: #ffb000;
+  --ok: #3fd16f;
+  --cyan: #3cc8e6;
+  --line: #1c2326;
+  --line-strong: #33403f;
+  --link: #4fd0ea;
+  --link-hover: #9be6f5;
+  --focus: #ffb000;
+  --font-body: 'B612', system-ui, sans-serif;
+  --font-mono: 'B612 Mono', ui-monospace, monospace;
+}

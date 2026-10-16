@@ -1,0 +1,27 @@
+---
+import TerminalLayout from '../../layouts/TerminalLayout.astro';
+import { site } from '../../lib/site';
+---
+
+<TerminalLayout title="Terminal view" description={`${site.name}: an interactive shell in the browser with projects, experience and contact details.`}>
+  <div class="wrap">
+    <h1>Terminal view</h1>
+    <p>Placeholder. The interactive shell is built in Phase 2.</p>
+    <p class="core" id="core-status">C++ core: loading...</p>
+  </div>
+</TerminalLayout>
+
+<script>
+  // Smoke test for the browser side of the C++ core. Phase 2 replaces this with the shell.
+  import { coreVersion } from '../../lib/core';
+
+  const status = document.getElementById('core-status');
+  coreVersion().then(
+    (version) => {
+      if (status) status.textContent = `C++ core ${version} loaded (WebAssembly).`;
+    },
+    () => {
+      if (status) status.textContent = 'C++ core could not be loaded.';
+    },
+  );
+</script>

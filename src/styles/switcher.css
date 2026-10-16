@@ -1,0 +1,123 @@
+/* Top bar and mode switcher. Same box, same position, same size in every mode;
+   only colors come from the theme tokens. */
+
+.fc-bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: var(--bar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-inline: var(--gutter);
+  background: var(--bar-bg);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+.fc-brand {
+  color: var(--fg);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.fc-switch {
+  position: relative;
+  flex: none;
+}
+
+.fc-switch summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding-inline: 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  color: var(--fg);
+  background: var(--bg-raised);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.fc-switch summary::-webkit-details-marker {
+  display: none;
+}
+
+.fc-switch summary::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.fc-switch details[open] summary::after {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+.fc-switch-label {
+  color: var(--fg-muted);
+}
+
+.fc-switch-current {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.fc-switch ul {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 15rem;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+.fc-switch li a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.fc-switch li a:hover {
+  background: var(--bg-hover);
+}
+
+.fc-switch li a[aria-current='page'] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.fc-switch li a[aria-current='page']::after {
+  content: 'current';
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--fg-muted);
+}
+
+@media (max-width: 420px) {
+  .fc-switch-label {
+    display: none;
+  }
+}

@@ -1,0 +1,6 @@
+* text=auto eol=lf
+
+# Keep GitHub's language bar honest: generated output is not source.
+src/generated/** linguist-generated
+src/data/*.json linguist-detectable=false
+package-lock.json linguist-generated

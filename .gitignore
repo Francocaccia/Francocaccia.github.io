@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.astro/
+build/
+src/generated/
+
+# Forbidden-term list for the private-name check. Never commit it.
+.private-terms
+
+.env
+.env.*
+*.log
+.DS_Store
+Thumbs.db
