@@ -1,27 +1,157 @@
 ---
+// Terminal view: a real shell over a virtual filesystem generated from site.json.
+// The C++ engine runs at build time to pre-render the first screen (`cat about.md`) and the
+// <noscript> copy, and again in the browser (WebAssembly) for everything interactive.
 import TerminalLayout from '../../layouts/TerminalLayout.astro';
+import TermLines from '../../components/TermLines.astro';
 import { site } from '../../lib/site';
+import { coreCall } from '../../lib/core';
+import { enabledModes } from '../../config';
+
+const modes = enabledModes()
+  .filter((m) => m.id !== 'terminal')
+  .map((m) => m.id);
+
+const init = await coreCall<{ files: { path: string; content: string }[] }>('term.init', { site, modes, files: true });
+const first = await coreCall<{ lines: { t: string; k?: string; h?: string; c?: string }[][] }>('term.exec', {
+  line: 'cat about.md',
+  cwd: '~',
+  history: ['cat about.md'],
+  now: 0,
+});
+
+const bot = site.bot;
+const tryThese = [
+  { cmd: 'help', why: 'every command, explained' },
+  { cmd: 'ls', why: 'see what is here' },
+  { cmd: 'projects', why: 'what I have built' },
+  { cmd: 'cat skills.txt', why: 'tools I use' },
+  { cmd: 'stats', why: 'the trading bot, live' },
+  { cmd: 'neofetch', why: 'facts card' },
+  { cmd: 'tree', why: 'every file at a glance' },
+  { cmd: 'grep python', why: 'search everything' },
+  { cmd: 'open github', why: 'get a link' },
+  { cmd: 'mode finance', why: 'switch view' },
+  { cmd: 'sudo hire franco', why: 'try it' },
+];
+const cheats = [
+  ['ls', 'list files in this folder'],
+  ['cd <folder>', 'go in (cd .. goes back)'],
+  ['cat <file>', 'read a file'],
+  ['Tab', 'finish a name'],
+  ['Up / Down', 'earlier commands'],
+  ['clear', 'wipe the screen'],
+];
+const jsonForScript = JSON.stringify(site).replace(/</g, '\\u003c');
 ---
 
-<TerminalLayout title="Terminal view" description={`${site.name}: an interactive shell in the browser with projects, experience and contact details.`}>
+<TerminalLayout
+  title="Terminal view"
+  description={`${site.name}: an interactive shell in the browser. Type help, or click a command, to read about projects, experience, skills and contact details.`}
+>
   <div class="wrap">
-    <h1>Terminal view</h1>
-    <p>Placeholder. The interactive shell is built in Phase 2.</p>
-    <p class="core" id="core-status">C++ core: loading...</p>
+    <div
+      class="term-layout"
+      data-term
+      data-modes={modes.join(',')}
+      data-api-base={bot.apiBase}
+      data-stats-path={bot.statsPath}
+      data-timeout={bot.timeoutMs}
+      data-tracking-since={bot.trackingSince}
+    >
+      <section class="term" aria-label="Interactive terminal">
+        <div class="term-bar" aria-hidden="true">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span class="term-title" data-title>visitor@portfolio: ~</span>
+        </div>
+        <div class="term-screen" role="log" aria-live="polite" aria-relevant="additions" aria-label="Terminal output" tabindex="0" data-screen>
+          <div class="term-line term-echo"><span class="ps">visitor@portfolio:~$</span> cat about.md</div>
+          <TermLines lines={first.lines} />
+        </div>
+        <form class="term-input" data-form autocomplete="off">
+          <label class="ps" for="term-cmd" data-ps>visitor@portfolio:~$</label>
+          <input
+            id="term-cmd"
+            name="command"
+            type="text"
+            autocapitalize="off"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+            enterkeyhint="go"
+            inputmode="text"
+            aria-describedby="term-hint"
+            disabled
+            data-input
+          />
+        </form>
+        <div class="term-keys" data-keys>
+          <button type="button" data-key="tab">Tab</button>
+          <button type="button" data-key="up" aria-label="Previous command">Up</button>
+          <button type="button" data-key="down" aria-label="Next command">Down</button>
+          <button type="button" data-key="clear">Clear</button>
+          <span id="term-hint" class="term-hint">Type help, then press Enter.</span>
+        </div>
+      </section>
+
+      <aside class="term-panel" aria-labelledby="panel-h">
+        <h1 id="panel-h">Terminal view</h1>
+        <p class="panel-lead">
+          A real shell, made for reading. Type a command and press Enter, or click anything green.
+        </p>
+
+        <h2>Try these</h2>
+        <ul class="try">
+          {
+            tryThese.map((t) => (
+              <li>
+                <button type="button" class="try-btn" data-run={t.cmd}>
+                  <span class="try-cmd">{t.cmd}</span>
+                  <span class="try-why">{t.why}</span>
+                </button>
+              </li>
+            ))
+          }
+        </ul>
+
+        <details class="cheat" open data-cheat>
+          <summary>Cheat sheet</summary>
+          <dl>
+            {
+              cheats.map(([k, v]) => (
+                <>
+                  <dt><code>{k}</code></dt>
+                  <dd>{v}</dd>
+                </>
+              ))
+            }
+          </dl>
+        </details>
+      </aside>
+    </div>
+
+    <noscript>
+      <section class="static" aria-labelledby="static-h">
+        <h2 id="static-h">Same facts, as plain text</h2>
+        <p>The interactive shell needs JavaScript. These are the files it would show.</p>
+        {
+          init.files.map((f) => (
+            <>
+              <h3>{f.path}</h3>
+              <pre>{f.content}</pre>
+            </>
+          ))
+        }
+        <p>
+          Links: <a href={site.links.github}>GitHub</a>, <a href={site.links.linkedin}>LinkedIn</a>.
+        </p>
+      </section>
+    </noscript>
+
+    <script type="application/json" id="term-site" set:html={jsonForScript} />
   </div>
 </TerminalLayout>
 
 <script>
-  // Smoke test for the browser side of the C++ core. Phase 2 replaces this with the shell.
-  import { coreVersion } from '../../lib/core';
-
-  const status = document.getElementById('core-status');
-  coreVersion().then(
-    (version) => {
-      if (status) status.textContent = `C++ core ${version} loaded (WebAssembly).`;
-    },
-    () => {
-      if (status) status.textContent = 'C++ core could not be loaded.';
-    },
-  );
+  import '../../scripts/terminal';
 </script>

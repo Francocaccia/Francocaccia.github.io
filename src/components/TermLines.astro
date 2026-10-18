@@ -1,0 +1,36 @@
+---
+// Static (build-time) rendering of the shell's structured output. Mirrors
+// src/lib/term-render.ts, which does the same in the browser. Built as one string
+// (not JSX) because the terminal is whitespace-sensitive and templates add stray spaces.
+interface Span {
+  t: string;
+  k?: string;
+  h?: string;
+  c?: string;
+}
+interface Props {
+  lines: Span[][];
+}
+
+const { lines } = Astro.props;
+const SAFE = /^(https:\/\/|mailto:|\/(?!\/))/;
+
+const esc = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+function span(s: Span): string {
+  if (s.k === 'link' && s.h && SAFE.test(s.h)) {
+    const external = s.h.startsWith('/') ? '' : ' target="_blank" rel="noopener noreferrer"';
+    return `<a href="${esc(s.h)}"${external}>${esc(s.t)}</a>`;
+  }
+  if (s.k === 'cmd' && s.c) {
+    const name = s.t.trimEnd();
+    return `<button type="button" class="cmd" data-run="${esc(s.c)}">${esc(name)}</button>${esc(s.t.slice(name.length))}`;
+  }
+  return `<span${s.k ? ` class="k-${esc(s.k)}"` : ''}>${esc(s.t)}</span>`;
+}
+
+const html = lines.map((line) => `<div class="term-line">${line.map(span).join('')}</div>`).join('');
+---
+
+<Fragment set:html={html} />

@@ -5,11 +5,13 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <memory>
 
 #include "fc/chart.hpp"
 #include "fc/json.hpp"
 #include "fc/site_check.hpp"
 #include "fc/stats.hpp"
+#include "fc/term.hpp"
 
 namespace fc {
 
@@ -83,6 +85,48 @@ Json opStatsNormalize(const Json& in) {
   return normalizeStats(in.at("stats"), in.at("trackingSince").asString());
 }
 
+// The shell keeps its filesystem for the life of the page, so it is built once by term.init.
+std::unique_ptr<Term>& shell() {
+  static std::unique_ptr<Term> instance;
+  return instance;
+}
+
+Term& requireShell() {
+  if (!shell()) throw ApiError{"call term.init first"};
+  return *shell();
+}
+
+// input: {site, modes?: ["finance", ...], metarReady?: bool, files?: bool}
+Json opTermInit(const Json& in) {
+  if (!in.at("site").isObject()) throw ApiError{"term.init needs a 'site' object"};
+  TermOptions options;
+  for (const Json& m : in.at("modes").items()) options.modes.push_back(m.asString());
+  options.metarReady = in.at("metarReady").asBool(false);
+  shell() = std::make_unique<Term>(in.at("site"), options);
+  Json out = Json::object();
+  if (in.at("files").asBool(false)) out.set("files", shell()->files());
+  return out;
+}
+
+// input: {line, cwd?, history?: [string], now?: unix seconds}
+Json opTermExec(const Json& in) {
+  std::vector<std::string> history;
+  for (const Json& h : in.at("history").items()) history.push_back(h.asString());
+  std::string cwd = in.at("cwd").isString() ? in.at("cwd").asString() : "~";
+  return requireShell().exec(in.at("line").asString(), cwd, history, static_cast<long long>(in.at("now").asNumber(0)));
+}
+
+// input: {line, cwd?}
+Json opTermComplete(const Json& in) {
+  std::string cwd = in.at("cwd").isString() ? in.at("cwd").asString() : "~";
+  return requireShell().complete(in.at("line").asString(), cwd);
+}
+
+// input: {stats: <payload of /stats> | null, trackingSince}
+Json opTermStats(const Json& in) {
+  return requireShell().statsOutput(in.at("stats"), in.at("trackingSince").asString());
+}
+
 const std::map<std::string, Handler>& handlers() {
   static const std::map<std::string, Handler> table = {
       {"version", opVersion},
@@ -91,6 +135,10 @@ const std::map<std::string, Handler>& handlers() {
       {"chart.illustrative", opChartIllustrative},
       {"chart.live", opChartLive},
       {"stats.normalize", opStatsNormalize},
+      {"term.init", opTermInit},
+      {"term.exec", opTermExec},
+      {"term.complete", opTermComplete},
+      {"term.stats", opTermStats},
   };
   return table;
 }

@@ -29,6 +29,16 @@ struct Registrar {
 };
 
 template <typename T>
+std::string show(const T& v);
+
+template <typename T>
+std::string show(const std::vector<T>& v) {
+  std::string out = "[";
+  for (std::size_t i = 0; i < v.size(); ++i) out += (i ? ", " : "") + show(v[i]);
+  return out + "]";
+}
+
+template <typename T>
 std::string show(const T& v) {
   std::ostringstream os;
   os << v;
