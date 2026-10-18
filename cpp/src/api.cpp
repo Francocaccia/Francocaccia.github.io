@@ -8,10 +8,12 @@
 #include <memory>
 
 #include "fc/chart.hpp"
+#include "fc/geo.hpp"
 #include "fc/json.hpp"
 #include "fc/site_check.hpp"
 #include "fc/stats.hpp"
 #include "fc/term.hpp"
+#include "fc/weather.hpp"
 
 namespace fc {
 
@@ -96,12 +98,18 @@ Term& requireShell() {
   return *shell();
 }
 
-// input: {site, modes?: ["finance", ...], metarReady?: bool, files?: bool}
+// input: {site, modes?: ["finance", ...], metars?: {SABE:{raw,observedAt,sample}}, files?: bool}
 Json opTermInit(const Json& in) {
   if (!in.at("site").isObject()) throw ApiError{"term.init needs a 'site' object"};
   TermOptions options;
   for (const Json& m : in.at("modes").items()) options.modes.push_back(m.asString());
-  options.metarReady = in.at("metarReady").asBool(false);
+  for (const auto& m : in.at("metars").members()) {
+    MetarSource src;
+    src.raw = m.second.at("raw").asString();
+    src.observedAt = m.second.at("observedAt").asString();
+    src.sample = m.second.at("sample").asBool(false);
+    if (!src.raw.empty()) options.metars[m.first] = src;
+  }
   shell() = std::make_unique<Term>(in.at("site"), options);
   Json out = Json::object();
   if (in.at("files").asBool(false)) out.set("files", shell()->files());
@@ -127,6 +135,21 @@ Json opTermStats(const Json& in) {
   return requireShell().statsOutput(in.at("stats"), in.at("trackingSince").asString());
 }
 
+// input: {raw, observedAt?}
+Json opMetarDecode(const Json& in) { return decodeMetar(in.at("raw").asString(), in.at("observedAt").asString()); }
+
+// input: {raw, monthDays?, width?, idPrefix?}
+Json opTafDecode(const Json& in) { return decodeTaf(in); }
+
+// input: {dir, speed, gust?, runway, variation?, idPrefix?}
+Json opWindComponents(const Json& in) { return windComponents(in); }
+
+// input: {airports:[{icao,name,lat,lon}], width?, height?, idPrefix?}
+Json opGeoRoute(const Json& in) {
+  if (!in.at("airports").isArray() || in.at("airports").items().size() < 2) throw ApiError{"geo.route needs at least two airports"};
+  return routeMap(in);
+}
+
 const std::map<std::string, Handler>& handlers() {
   static const std::map<std::string, Handler> table = {
       {"version", opVersion},
@@ -139,6 +162,10 @@ const std::map<std::string, Handler>& handlers() {
       {"term.exec", opTermExec},
       {"term.complete", opTermComplete},
       {"term.stats", opTermStats},
+      {"metar.decode", opMetarDecode},
+      {"taf.decode", opTafDecode},
+      {"wind.components", opWindComponents},
+      {"geo.route", opGeoRoute},
   };
   return table;
 }

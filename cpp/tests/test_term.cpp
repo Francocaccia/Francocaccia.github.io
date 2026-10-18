@@ -295,6 +295,26 @@ TEST(term_mode_navigates_only_to_enabled_views) {
   CHECK(run(limited, "mode aviation").action("navigate") == nullptr);
 }
 
+TEST(term_metar_decodes_the_snapshot_it_was_given) {
+  fc::TermOptions o;
+  o.modes = {"aviation"};
+  o.metars["KABE"] = {"METAR KABE 181451Z 00000KT 10SM CLR 09/M01 A3062 RMK AO2 SLP371", "2026-10-18T14:51:00.000Z", false};
+  o.metars["SABE"] = {"SABE 161800Z 18010KT 9999 FEW030 22/14 Q1015", "2026-10-16T18:00:00.000Z", true};
+  fc::Term t(parse(kSite), o);
+  std::string kabe = run(t, "metar KABE").text();
+  CHECK(has(kabe, "METAR KABE 181451Z"));
+  CHECK(has(kabe, "Observed 2026-10-18 14:51 UTC"));
+  CHECK(!has(kabe, "sample data"));
+  CHECK(has(kabe, "VFR"));
+  CHECK(has(kabe, "Calm"));
+  CHECK(has(kabe, "30.62 inHg"));
+  CHECK(has(kabe, "mode aviation"));
+  std::string sabe = run(t, "metar sabe").text();
+  CHECK(has(sabe, "sample data, not a live report"));
+  CHECK(has(sabe, "From 180"));
+  CHECK(has(sabe, "1,015 hPa") || has(sabe, "1015 hPa"));
+}
+
 TEST(term_metar_is_coming_soon_until_the_decoder_exists) {
   fc::Term t = makeTerm();
   CHECK(has(run(t, "metar kabe").text(), "coming soon"));

@@ -7,6 +7,7 @@
 #include <map>
 
 #include "fc/stats.hpp"
+#include "fc/weather.hpp"
 
 namespace fc {
 
@@ -786,6 +787,12 @@ void cmdMode(Ctx& c, const std::vector<std::string>& a) {
   c.out.action("remember", "mode", m);
 }
 
+// "2026-10-18T15:00:00.000Z" -> "2026-10-18 15:00 UTC"
+std::string utcStamp(const std::string& iso) {
+  if (iso.size() >= 16 && iso[10] == 'T') return iso.substr(0, 10) + " " + iso.substr(11, 5) + " UTC";
+  return iso;
+}
+
 void cmdMetar(Ctx& c, const std::vector<std::string>& a) {
   if (a.empty()) return usage(c, "metar");
   std::string st = lower(a[0]);
@@ -793,14 +800,38 @@ void cmdMetar(Ctx& c, const std::vector<std::string>& a) {
     c.out.error("metar: pick sabe (Buenos Aires) or kabe (Lehigh Valley).");
     return;
   }
-  if (!c.options.metarReady) {
+  auto found = c.options.metars.find(st == "sabe" ? "SABE" : "KABE");
+  bool aviation = std::find(c.options.modes.begin(), c.options.modes.end(), "aviation") != c.options.modes.end();
+  if (found == c.options.metars.end()) {
     c.out.text("METAR decoding is coming soon. It will live in the Aviation view.", "dim");
-    if (std::find(c.options.modes.begin(), c.options.modes.end(), "aviation") != c.options.modes.end()) {
-      c.out.add({S("Take a look: ", "dim"), CMD("mode aviation")});
-    }
+    if (aviation) c.out.add({S("Take a look: ", "dim"), CMD("mode aviation")});
     return;
   }
-  c.out.text("metar: not wired up yet.", "dim");
+  Json d = decodeMetar(found->second.raw, utcStamp(found->second.observedAt));
+  if (!d.at("ok").asBool()) {
+    c.out.error("metar: " + d.at("error").asString());
+    return;
+  }
+  c.out.add({S(found->second.raw, "accent")});
+  c.out.add({S("Observed " + utcStamp(found->second.observedAt), "dim"),
+             S(found->second.sample ? "  (sample data, not a live report)" : "", "dim")});
+  c.out.blank();
+  c.out.add({S(pad("Category", 13), "dim"), S(d.at("category").asString(), "accent"), S("  " + d.at("categoryWhy").asString())});
+  static const char* const wanted[] = {"Wind (true direction)", "Visibility", "Weather", "Clouds", "Temperature",
+                                       "Dew point",              "Pressure",   "Trend"};
+  for (const char* label : wanted) {
+    for (const Json& r : d.at("rows").items()) {
+      if (r.at("label").asString() != label) continue;
+      bool first = true;
+      for (const std::string& line : split(r.at("value").asString(), '\n')) {
+        std::string shown = first ? std::string(label) == "Wind (true direction)" ? "Wind" : label : "";
+        c.out.add({S(pad(shown, 13), "dim"), S(line)});
+        first = false;
+      }
+    }
+  }
+  c.out.blank();
+  if (aviation) c.out.add({S("Every group explained: ", "dim"), CMD("mode aviation")});
 }
 
 void cmdSudo(Ctx& c, const std::vector<std::string>& a) {

@@ -6,6 +6,7 @@
 // textContent and user input can never become markup.
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -13,9 +14,16 @@
 
 namespace fc {
 
+// The latest report the page has for a station (a snapshot, or a labeled sample).
+struct MetarSource {
+  std::string raw;
+  std::string observedAt;  // ISO time, for display
+  bool sample = false;
+};
+
 struct TermOptions {
-  std::vector<std::string> modes;  // enabled views the `mode` command may open, e.g. "finance"
-  bool metarReady = false;         // flips on when the Aviation decoder is wired in
+  std::vector<std::string> modes;                // enabled views the `mode` command may open, e.g. "finance"
+  std::map<std::string, MetarSource> metars;     // by ICAO code; empty means `metar` says "coming soon"
 };
 
 class Term {

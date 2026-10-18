@@ -235,6 +235,7 @@ std::vector<Issue> checkSite(const Json& site, const std::vector<std::string>& f
   checkArrayOfObjects(c, site, "certifications", [&](const Json& e, const std::string& path) {
     c.need(e, path, "name", Json::Type::String);
     c.oneOf(e, path, "status", {"active", "in-progress", "complete"});
+    c.oneOf(e, path, "track", {"aviation", "finance"});
   });
 
   checkArrayOfObjects(c, site, "languages", [&](const Json& e, const std::string& path) {
@@ -262,6 +263,30 @@ std::vector<Issue> checkSite(const Json& site, const std::vector<std::string>& f
       c.need(m.second, path, "raw", Json::Type::String);
       c.need(m.second, path, "observedAt", Json::Type::String);
       if (!m.second.at("sample").isBool()) c.error(path + ".sample", "must be true or false");
+    }
+  }
+
+  if (const Json* av = c.need(site, "", "aviation", Json::Type::Object)) {
+    if (const Json* taf = c.need(*av, "aviation", "tafSample", Json::Type::Object)) {
+      c.need(*taf, "aviation.tafSample", "raw", Json::Type::String);
+      c.need(*taf, "aviation.tafSample", "label", Json::Type::String);
+      c.need(*taf, "aviation.tafSample", "monthDays", Json::Type::Number);
+    }
+    if (const Json* ex = c.need(*av, "aviation", "examples", Json::Type::Array)) {
+      if (ex->items().empty()) c.error("aviation.examples", "must not be empty");
+      std::size_t i = 0;
+      for (const Json& e : ex->items()) {
+        std::string path = "aviation.examples[" + std::to_string(i++) + "]";
+        c.need(e, path, "label", Json::Type::String);
+        c.need(e, path, "raw", Json::Type::String);
+      }
+    }
+    if (const Json* mc = c.need(*av, "aviation", "meetsCode", Json::Type::Array)) {
+      std::size_t i = 0;
+      for (const Json& e : mc->items()) {
+        std::string path = "aviation.meetsCode[" + std::to_string(i++) + "]";
+        for (const char* k : {"habit", "inFlight", "inCode"}) c.need(e, path, k, Json::Type::String);
+      }
     }
   }
 

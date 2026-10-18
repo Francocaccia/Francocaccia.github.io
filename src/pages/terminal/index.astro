@@ -7,12 +7,21 @@ import TermLines from '../../components/TermLines.astro';
 import { site } from '../../lib/site';
 import { coreCall } from '../../lib/core';
 import { enabledModes } from '../../config';
+import { stationWeather } from '../../lib/weather';
 
 const modes = enabledModes()
   .filter((m) => m.id !== 'terminal')
   .map((m) => m.id);
 
-const init = await coreCall<{ files: { path: string; content: string }[] }>('term.init', { site, modes, files: true });
+// The newest report the page has for each airport (a snapshot, or a labeled sample).
+const metars = Object.fromEntries(
+  ['SABE', 'KABE'].map((icao) => {
+    const w = stationWeather(icao);
+    return [icao, { raw: w.raw, observedAt: w.observedAt, sample: w.sample }];
+  }),
+);
+
+const init = await coreCall<{ files: { path: string; content: string }[] }>('term.init', { site, modes, metars, files: true });
 const first = await coreCall<{ lines: { t: string; k?: string; h?: string; c?: string }[][] }>('term.exec', {
   line: 'cat about.md',
   cwd: '~',
@@ -27,6 +36,7 @@ const tryThese = [
   { cmd: 'projects', why: 'what I have built' },
   { cmd: 'cat skills.txt', why: 'tools I use' },
   { cmd: 'stats', why: 'the trading bot, live' },
+  { cmd: 'metar kabe', why: 'decode real weather' },
   { cmd: 'neofetch', why: 'facts card' },
   { cmd: 'tree', why: 'every file at a glance' },
   { cmd: 'grep python', why: 'search everything' },
@@ -54,6 +64,7 @@ const jsonForScript = JSON.stringify(site).replace(/</g, '\\u003c');
       class="term-layout"
       data-term
       data-modes={modes.join(',')}
+      data-metars={JSON.stringify(metars)}
       data-api-base={bot.apiBase}
       data-stats-path={bot.statsPath}
       data-timeout={bot.timeoutMs}

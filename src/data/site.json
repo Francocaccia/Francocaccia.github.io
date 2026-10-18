@@ -90,11 +90,11 @@
   ],
 
   "certifications": [
-    { "name": "Commercial Pilot + Instrument Rating", "issuer": "ANAC (Argentina)", "status": "active" },
-    { "name": "Commercial Pilot", "issuer": "FAA", "status": "in-progress" },
-    { "name": "Flight Dispatcher", "status": "in-progress" },
-    { "name": "Restricted Radiotelephone Operator", "issuer": "FCC", "status": "active" },
-    { "name": "Bloomberg Market Concepts", "issuer": "Bloomberg", "status": "complete" }
+    { "name": "Commercial Pilot + Instrument Rating", "issuer": "ANAC (Argentina)", "status": "active", "track": "aviation" },
+    { "name": "Commercial Pilot", "issuer": "FAA", "status": "in-progress", "track": "aviation" },
+    { "name": "Flight Dispatcher", "status": "in-progress", "track": "aviation" },
+    { "name": "Restricted Radiotelephone Operator", "issuer": "FCC", "status": "active", "track": "aviation" },
+    { "name": "Bloomberg Market Concepts", "issuer": "Bloomberg", "status": "complete", "track": "finance" }
   ],
 
   "languages": [
@@ -139,6 +139,37 @@
     }
   },
 
+  "aviation": {
+    "tafSample": {
+      "label": "sample (format demo)",
+      "monthDays": 31,
+      "raw": "TAF KABE 161720Z 1618/1724 27008KT P6SM FEW050 BKN250 FM162000 28010G18KT P6SM SCT040 TEMPO 1700/1704 3SM -SHRA BKN020 FM170600 18006KT 5SM BR OVC008 PROB30 1709/1712 1SM FG VV002 BECMG 1712/1714 27012KT P6SM SCT050 TX22/1718Z TN08/1710Z"
+    },
+    "examples": [
+      { "label": "Calm, clear (US)", "raw": "KABE 181451Z 00000KT 10SM CLR 09/M01 A3062 RMK AO2 SLP371 T00891011 52015 $" },
+      { "label": "CAVOK, variable wind", "raw": "SABE 181500Z 08007KT 050V110 CAVOK 13/03 Q1022 NOSIG" },
+      { "label": "IFR: rain, mist, low cloud", "raw": "KBOS 051156Z 05012G25KT 1 1/2SM -RA BR OVC008 09/08 A2981 RMK AO2 SLP102 P0012 T00940083" },
+      { "label": "Thunderstorm with CB", "raw": "LFPG 161830Z 24015G30KT 190V270 3000 +TSRA SCT008 BKN025CB 18/17 Q1005 TEMPO 1500 BKN010" },
+      { "label": "Fog, runway visual range", "raw": "LFPG 161830Z 24005KT 0400 R26L/0600V1000N FG VV001 05/05 Q1020" }
+    ],
+    "meetsCode": [
+      {
+        "habit": "Checklists",
+        "inFlight": "The same steps in the same order, so nothing depends on memory.",
+        "inCode": "Every order goes through the same risk checks in code, whatever the model said."
+      },
+      {
+        "habit": "Minimums",
+        "inFlight": "Limits chosen on the ground, before the weather makes the decision harder.",
+        "inCode": "Position and sector caps and a reward-to-risk floor of 2 to 1 are set in code, not argued in the prompt."
+      },
+      {
+        "habit": "Briefings",
+        "inFlight": "Weather, plan and alternates reviewed before the engine starts.",
+        "inCode": "Indicators, news and the current position are put in front of the model before each decision."
+      }
+    ]
+  },
   "bot": {
     "apiBase": "https://autotradingbot-kjr0.onrender.com",
     "trackingSince": "2026-10-13",

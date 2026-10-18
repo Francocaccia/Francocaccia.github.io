@@ -33,7 +33,11 @@ async function start(root: HTMLElement) {
 
   const site = JSON.parse(document.getElementById('term-site')!.textContent!);
   const { coreCall } = await import('../lib/core');
-  await coreCall('term.init', { site, modes: modes.split(',').filter(Boolean) });
+  await coreCall('term.init', {
+    site,
+    modes: modes.split(',').filter(Boolean),
+    metars: JSON.parse(root.dataset.metars ?? '{}'),
+  });
 
   let cwd = '~';
   const history: string[] = ['cat about.md']; // the first screen already ran this
