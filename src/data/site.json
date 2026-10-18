@@ -37,11 +37,11 @@
       "id": "defi-lending",
       "name": "DeFi lending protocol",
       "tag": "DEFI",
-      "status": "next",
-      "statusLabel": "Up next",
-      "summary": "Overcollateralized lending with Chainlink price feeds.",
-      "stack": ["Solidity", "Foundry", "Chainlink"],
-      "repo": null
+      "status": "shipped",
+      "statusLabel": "Shipped, public, not audited",
+      "summary": "Over-collateralized lending with Chainlink price feeds, utilization-based interest, health-factor liquidations and explicit bad debt. Its math is checked against an independent C++ reference model. Educational project, not audited, never used with real funds.",
+      "stack": ["Solidity", "Foundry", "Chainlink", "C++"],
+      "repo": "https://github.com/Francocaccia/defi-lending-core"
     },
     {
       "id": "mev-and-chain",
@@ -107,7 +107,8 @@
   "skills": [
     { "name": "Go", "group": "Languages", "state": "used", "usedIn": ["autotradingbot", "stock-quant-reports", "mev-and-chain"] },
     { "name": "Python", "group": "Languages", "state": "used", "usedIn": ["autotradingbot", "exp-lehigh"] },
-    { "name": "Solidity", "group": "Languages", "state": "upcoming", "usedIn": ["defi-lending"] },
+    { "name": "Solidity", "group": "Languages", "state": "used", "usedIn": ["defi-lending"] },
+    { "name": "C++", "group": "Languages", "state": "used", "usedIn": ["defi-lending"] },
     { "name": "React", "group": "Frontend", "state": "used", "usedIn": ["stock-quant-reports"] },
     { "name": "MongoDB", "group": "Data", "state": "used", "usedIn": ["stock-quant-reports"] },
     { "name": "Firebase", "group": "Data", "state": "used", "usedIn": ["stock-quant-reports"] },
@@ -115,8 +116,8 @@
     { "name": "Render", "group": "Infrastructure", "state": "used", "usedIn": ["autotradingbot"] },
     { "name": "Alpaca", "group": "APIs and models", "state": "used", "usedIn": ["autotradingbot"] },
     { "name": "Gemini", "group": "APIs and models", "state": "used", "usedIn": ["autotradingbot"] },
-    { "name": "Chainlink", "group": "APIs and models", "state": "upcoming", "usedIn": ["defi-lending"] },
-    { "name": "Foundry", "group": "Tooling", "state": "upcoming", "usedIn": ["defi-lending"] }
+    { "name": "Chainlink", "group": "APIs and models", "state": "used", "usedIn": ["defi-lending"] },
+    { "name": "Foundry", "group": "Tooling", "state": "used", "usedIn": ["defi-lending"] }
   ],
 
   "airports": [
