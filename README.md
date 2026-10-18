@@ -14,10 +14,14 @@ See [PLAN.md](PLAN.md) for the architecture, rules and progress.
 
 ```bash
 npm install
-npm test          # C++ unit tests
-npm run dev       # http://localhost:4321
-npm run build     # output in dist/
+npm test            # C++ unit tests (Emscripten, run under Node)
+npm run dev         # http://localhost:4321
+npm run build       # output in dist/ (builds the C++ core, validates the data first)
+npm run check:links # broken internal links and anchors in dist/ (add -- --external for outside URLs)
+npm run fetch:metar # refresh src/data/weather.json from aviationweather.gov
 ```
+
+Names that must never appear on the site go in an untracked `.private-terms` file (one per line); `npm run build` fails if one shows up in the data.
 
 Edit the content in `src/data/site.json`. Entries that start with `TODO` are placeholders.
 

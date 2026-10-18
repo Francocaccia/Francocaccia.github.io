@@ -1,6 +1,7 @@
 // Terminal view, browser side. The shell itself (filesystem, commands, completion) is the
 // C++ core running as WebAssembly; this file only handles input, history and the DOM.
 import { STORAGE_KEY } from '../config';
+import { afterLoad } from '../lib/after-load';
 import { renderLines, type TermLine } from '../lib/term-render';
 
 interface ExecResult {
@@ -28,10 +29,11 @@ async function start(root: HTMLElement) {
   } = root.dataset;
   const timeoutMs = Number(root.dataset.timeout) || 75000;
 
-  // On phones the cheat sheet starts closed so the terminal stays in view.
-  if (cheat && matchMedia('(max-width: 899px)').matches) cheat.open = false;
+  // The cheat sheet is closed in the HTML so nothing moves on phones; on wide screens there is room for it.
+  if (cheat && matchMedia('(min-width: 900px)').matches) cheat.open = true;
 
   const site = JSON.parse(document.getElementById('term-site')!.textContent!);
+  await afterLoad(); // the first screen is already on the page; let fonts and styles finish before the 280 KB core
   const { coreCall } = await import('../lib/core');
   await coreCall('term.init', {
     site,
@@ -192,8 +194,15 @@ async function start(root: HTMLElement) {
     void run(line);
   });
 
+  // Tab completes names, which would trap keyboard users. It only completes when there is text to
+  // complete, never with Shift, and Escape followed by Tab always leaves the prompt.
+  let leaveNext = false;
   input.addEventListener('keydown', (event) => {
     if (event.key === 'Tab') {
+      if (event.shiftKey || leaveNext || input.value.trim() === '') {
+        leaveNext = false;
+        return;
+      }
       event.preventDefault();
       void complete();
     } else if (event.key === 'ArrowUp') {
@@ -210,7 +219,10 @@ async function start(root: HTMLElement) {
         event.preventDefault();
         userAborted = true;
         pending.abort();
-      } else if (event.key !== 'Escape') {
+      } else if (event.key === 'Escape') {
+        leaveNext = true;
+        return;
+      } else {
         event.preventDefault();
         echo(`${input.value}^C`);
         input.value = '';
@@ -218,6 +230,7 @@ async function start(root: HTMLElement) {
       }
     } else if (event.key !== 'Shift') {
       lastTabLine = null;
+      leaveNext = false;
     }
   });
 

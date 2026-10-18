@@ -257,7 +257,7 @@ TEST(metar_output_is_escaped) {
   CHECK(has(html, "&lt;SCRIPT&gt;"));
   CHECK(!has(html, "onmouseover=x\""));
   CHECK(has(html, "data-tip=\""));
-  CHECK(has(html, "tabindex=\"0\""));
+  CHECK(!has(html, "tabindex"));  // the page adds a roving tabindex, so each report line is one Tab stop
 }
 
 TEST(metar_observed_time_is_echoed_when_given) {

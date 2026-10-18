@@ -2,14 +2,17 @@
 // crosswind calculator. The decoding itself is the C++ core (WebAssembly); this file wires the DOM.
 // Markup the core returns is built from escaped text, so it is assigned with innerHTML.
 
-const root = document.querySelector<HTMLElement>('[data-av]');
-if (root) start(root);
+import { afterLoad } from '../lib/after-load';
 
 const STALE_MS = 6 * 60 * 60 * 1000;
+
+const root = document.querySelector<HTMLElement>('[data-av]');
+if (root) start(root);
 
 function start(root: HTMLElement) {
   ageCounters();
   groupTooltips();
+  rovingGroups(document);
   void interactive(root);
 }
 
@@ -97,11 +100,38 @@ function groupTooltips() {
   );
 }
 
+// ---- one Tab stop per report line ---------------------------------------------------------------
+// A decoded report has a dozen groups. Instead of a dozen Tab stops each, the first group of a line is
+// the stop and the arrow keys move along the line (a "roving tabindex"). Tab always moves on.
+
+function rovingGroups(scope: ParentNode) {
+  scope.querySelectorAll<HTMLElement>('.mx-raw').forEach((line) => {
+    const groups = [...line.querySelectorAll<HTMLElement>('.mt')];
+    if (!groups.length) return;
+    groups.forEach((g, i) => (g.tabIndex = i === 0 ? 0 : -1));
+    if (line.dataset.roving) return;
+    line.dataset.roving = 'true';
+    line.addEventListener('keydown', (event) => {
+      const current = (event.target as Element).closest<HTMLElement>('.mt');
+      if (!current) return;
+      const list = [...line.querySelectorAll<HTMLElement>('.mt')];
+      const i = list.indexOf(current);
+      const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: list.length - 1 }[event.key];
+      if (next === undefined) return;
+      event.preventDefault();
+      const target = list[Math.max(0, Math.min(list.length - 1, next))];
+      list.forEach((g) => (g.tabIndex = g === target ? 0 : -1));
+      target.focus();
+    });
+  });
+}
+
 // ---- tools that need the C++ core -----------------------------------------------------------
 
 type Wind = { present: boolean; calm: boolean; variable: boolean; dir: number | null; speedKt: number | null; gustKt: number | null };
 
 async function interactive(root: HTMLElement) {
+  await afterLoad();
   const { coreCall } = await import('../lib/core');
   const winds: Record<string, Wind> = JSON.parse(root.dataset.winds ?? '{}');
   const examples: { label: string; raw: string }[] = JSON.parse(root.dataset.examples ?? '[]');
@@ -135,11 +165,13 @@ async function interactive(root: HTMLElement) {
         ]);
         if (!wide.ok) return message(wide.error ?? 'Could not decode that TAF.', 'error');
         out.innerHTML = `<div class="rv timeline"><div class="rv-wide">${wide.timeline}</div><div class="rv-narrow">${narrow.timeline}</div></div>${wide.html}`;
+        rovingGroups(out);
         return;
       }
       const result = await coreCall<Decoded>('metar.decode', { raw });
       if (!result.ok) return message(result.error ?? 'Could not decode that METAR.', 'error');
       out.innerHTML = result.html;
+      rovingGroups(out);
     } catch (error) {
       message((error as Error).message, 'error');
     }

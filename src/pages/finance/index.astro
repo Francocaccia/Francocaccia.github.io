@@ -37,7 +37,7 @@ const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', n
 
 <FinanceLayout
   title="Finance view"
-  description={`${site.name}: ${site.positioning} A paper-trading bot against SPY and a 60/40 portfolio, project watchlist, policy bands and risk controls. Paper trading only.`}
+  description={`${site.name}: investment-panel view. A paper-trading bot against SPY and a 60/40 portfolio, projects, policy bands and risk controls. Paper trading only.`}
 >
   <div
     class="wrap fin"
@@ -45,6 +45,7 @@ const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', n
     data-api-base={bot.apiBase}
     data-stats-path={bot.statsPath}
     data-history-path={bot.historyPath}
+    data-history-live={String(bot.historyLive)}
     data-timeout={bot.timeoutMs}
     data-tracking-since={bot.trackingSince}
   >
@@ -87,7 +88,7 @@ const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', n
             <div class="tile" data-tile={t.id} data-tone="none">
               <dt>{t.label}</dt>
               <dd data-value>—</dd>
-              <p class="tile-cap" data-caption>tracking since {bot.trackingSince}</p>
+              <dd class="tile-cap" data-caption>tracking since {bot.trackingSince}</dd>
             </div>
           ))
         }
@@ -154,7 +155,7 @@ const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', n
                   </td>
                   <td><span class={statusClass(p.status)}>{p.statusLabel}</span></td>
                   <td class="chips">{p.stack.map((s) => <span class="chip">{s}</span>)}</td>
-                  <td>{p.repo ? <a href={p.repo}>GitHub</a> : <span class="muted">No public repo</span>}</td>
+                  <td>{p.repo ? <a href={p.repo} aria-label={`GitHub repository for ${p.name}`}>GitHub</a> : <span class="muted">No public repo</span>}</td>
                 </tr>
               ))
             }

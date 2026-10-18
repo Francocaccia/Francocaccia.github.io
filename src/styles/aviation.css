@@ -479,7 +479,7 @@ table.data,
   border-left: 3px solid var(--line-strong);
 }
 
-.tf-p h4 {
+.tf-p h3 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;

@@ -4,12 +4,13 @@ import GatewayLayout from '../layouts/GatewayLayout.astro';
 import { site, withBase } from '../lib/site';
 import { enabledModes } from '../config';
 import { previewCandles } from '../lib/charts';
+import { stationWeather } from '../lib/weather';
 
 const modes = enabledModes();
 const candles = await previewCandles(240, 72, 11, 28);
 
-// A raw METAR for the aviation preview strip. Phase 3 replaces this with the real decoder's colors.
-const metar = site.weather.KABE;
+// The latest METAR for the aviation door preview (a snapshot, or a labeled sample).
+const metar = stationWeather('KABE');
 const tokenClass = (t: string) =>
   /^[A-Z]{4}$/.test(t) ? 'm-stn'
   : /^\d{6}Z$/.test(t) ? 'm-time'
@@ -19,10 +20,23 @@ const tokenClass = (t: string) =>
   : /^M?\d{2}\/M?\d{2}$/.test(t) ? 'm-temp'
   : /^[QA]\d{4}$/.test(t) ? 'm-qnh'
   : 'm-rmk';
-const metarTokens = metar.raw.split(' ').filter((t) => !t.startsWith('T0') && t !== 'SLP168').slice(0, 9);
+const allTokens = metar.raw.split(' ').filter((t) => t !== 'METAR');
+const metarTokens = allTokens.slice(0, allTokens.includes('RMK') ? allTokens.indexOf('RMK') : 9);
+
+const person = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  description: `${site.positioning} ${site.openTo}`,
+  url: 'https://francocaccia.github.io/',
+  address: { '@type': 'PostalAddress', addressRegion: 'Pennsylvania', addressCountry: 'US' },
+  sameAs: [site.links.github, site.links.linkedin],
+};
+const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
 ---
 
-<GatewayLayout title={site.name} description={`${site.name}: ${site.positioning} ${site.openTo} Three ways to read the same portfolio: aviation, terminal, finance.`}>
+<GatewayLayout title={site.name} description={`${site.name}'s portfolio in three views: aviation, terminal and finance. ${site.openTo}`}>
+  <script type="application/ld+json" slot="head" set:html={personJson} />
   <div class="wrap">
     <header class="hero">
       <p class="hero-kicker">{site.location}</p>
@@ -66,7 +80,7 @@ const metarTokens = metar.raw.split(' ').filter((t) => !t.startsWith('T0') && t 
                     <span class="pv-metar">
                       {metarTokens.map((t) => <span class={tokenClass(t)}>{t} </span>)}
                     </span>
-                    <span class="pv-tag">sample METAR</span>
+                    <span class="pv-tag">{metar.sample ? 'sample METAR' : 'latest METAR'}</span>
                   </span>
                 )}
               </span>

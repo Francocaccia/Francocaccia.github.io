@@ -3,17 +3,23 @@ import '@fontsource/ibm-plex-sans/latin-400.css';
 import '@fontsource/ibm-plex-sans/latin-600.css';
 import '@fontsource/ibm-plex-mono/latin-400.css';
 import '@fontsource/ibm-plex-mono/latin-600.css';
+import plexSans400 from '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2?url';
+import plexSans600 from '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2?url';
+import plexMono400 from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url';
+import plexMono600 from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2?url';
 import Base from './Base.astro';
 
 interface Props {
   title: string;
   description: string;
   current?: 'gateway' | 'summary';
+  noindex?: boolean;
 }
 
-const { title, description, current = 'gateway' } = Astro.props;
+const { title, description, current = 'gateway', noindex = false } = Astro.props;
 ---
 
-<Base title={title} description={description} current={current} theme="gateway">
+<Base fonts={[plexSans400, plexSans600, plexMono400, plexMono600]} title={title} description={description} current={current} theme="gateway" noindex={noindex}>
+  <slot name="head" slot="head" />
   <slot />
 </Base>

@@ -73,6 +73,10 @@ a:hover {
   padding-inline: var(--gutter);
 }
 
+main:focus {
+  outline: none; /* focused by the skip link; not a control */
+}
+
 main {
   flex: 1 0 auto;
   padding-block: 32px 48px;
@@ -136,4 +140,33 @@ main {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Printing (the quick view is meant to be printable): plain black on white, no bar. */
+@media print {
+  body {
+    padding-top: 0;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .fc-bar,
+  .skip-link {
+    display: none !important;
+  }
+  a {
+    color: #000 !important;
+  }
+  .fc-footer {
+    color: #000;
+    border-top-color: #000;
+  }
+}
+
+/* Standalone links (not inside a sentence) get a comfortable target. */
+.fin-links a,
+.av-links a,
+.quick a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
 }

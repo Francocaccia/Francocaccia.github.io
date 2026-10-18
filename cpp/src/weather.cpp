@@ -512,7 +512,7 @@ std::string catBadge(const std::string& name) {
 std::string groupsHtml(const std::vector<Group>& groups) {
   std::string out;
   for (const Group& g : groups) {
-    out += "<span class=\"mt mt-" + esc(g.kind) + "\" tabindex=\"0\" data-tip=\"" + esc(g.tip) + "\">" + esc(g.text) + "</span> ";
+    out += "<span class=\"mt mt-" + esc(g.kind) + "\" data-tip=\"" + esc(g.tip) + "\">" + esc(g.text) + "</span> ";
   }
   if (!out.empty()) out.pop_back();
   return out;
@@ -875,7 +875,7 @@ Json decodeMetar(const std::string& rawIn, const std::string& observedAt) {
   Category cat = categoryOf(body);
   rows.push_back({"Flight category", cat.name + ": " + cat.why});
 
-  std::string html = "<div class=\"mx\"><p class=\"mx-raw\" aria-label=\"The report, one colored group per element\">" + groupsHtml(groups) +
+  std::string html = "<div class=\"mx\"><p class=\"mx-raw\" aria-label=\"The report, one colored group per element. With a keyboard, use the arrow keys to move between groups.\">" + groupsHtml(groups) +
                      "</p><p class=\"mx-cat\">" + catBadge(cat.name) + " <span class=\"mx-why\">" + esc(cat.why) + "</span></p>" + rowsHtml(rows);
   if (!warnings.empty()) {
     html += "<ul class=\"mx-warn\">";

@@ -49,6 +49,7 @@ const cheats = [
   ['cd <folder>', 'go in (cd .. goes back)'],
   ['cat <file>', 'read a file'],
   ['Tab', 'finish a name'],
+  ['Esc, Tab', 'leave the prompt'],
   ['Up / Down', 'earlier commands'],
   ['clear', 'wipe the screen'],
 ];
@@ -98,10 +99,10 @@ const jsonForScript = JSON.stringify(site).replace(/</g, '\\u003c');
         </form>
         <div class="term-keys" data-keys>
           <button type="button" data-key="tab">Tab</button>
-          <button type="button" data-key="up" aria-label="Previous command">Up</button>
-          <button type="button" data-key="down" aria-label="Next command">Down</button>
+          <button type="button" data-key="up" aria-label="Up: previous command">Up</button>
+          <button type="button" data-key="down" aria-label="Down: next command">Down</button>
           <button type="button" data-key="clear">Clear</button>
-          <span id="term-hint" class="term-hint">Type help, then press Enter.</span>
+          <span id="term-hint" class="term-hint">Type help, then press Enter. Tab completes a name. Esc, then Tab, leaves the prompt.</span>
         </div>
       </section>
 
@@ -125,7 +126,7 @@ const jsonForScript = JSON.stringify(site).replace(/</g, '\\u003c');
           }
         </ul>
 
-        <details class="cheat" open data-cheat>
+        <details class="cheat" data-cheat>
           <summary>Cheat sheet</summary>
           <dl>
             {

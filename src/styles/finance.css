@@ -200,18 +200,19 @@
   font-size: 0.85rem;
 }
 
-.tile dd {
+.tile dd[data-value] {
   margin: 4px 0;
   font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: 600;
   line-height: 1.1;
 }
 
-.tile[data-tone='pos'] dd { color: var(--positive); }
-.tile[data-tone='neg'] dd { color: var(--negative); }
-.tile[data-tone='none'] dd { color: var(--fg-muted); }
+.tile[data-tone='pos'] dd[data-value] { color: var(--positive); }
+.tile[data-tone='neg'] dd[data-value] { color: var(--negative); }
+.tile[data-tone='none'] dd[data-value] { color: var(--fg-muted); }
 
 .tile-cap {
+  min-height: 2.7em; /* two lines: the caption gets longer when live data arrives, and the tiles must not jump */
   margin: 0;
   color: var(--fg-muted);
   font-size: 0.78rem;
@@ -219,7 +220,7 @@
 }
 
 .tiles-note {
-  min-height: 1.5em;
+  min-height: 4.5em;
   margin: 0 0 16px;
   color: var(--fg-muted);
   font-size: 0.85rem;
@@ -232,6 +233,7 @@
 }
 
 .chart-notice {
+  min-height: 6.5rem;
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -678,4 +680,9 @@ table.data,
 @media (max-width: 520px) {
   .heat tbody th { white-space: nowrap; }
   .heat tbody th .row-sub { display: none; }
+}
+
+@media (min-width: 760px) {
+  .tiles-note { min-height: 2.6em; }
+  .chart-notice { min-height: 3.6rem; }
 }

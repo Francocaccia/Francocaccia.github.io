@@ -175,6 +175,7 @@
     "trackingSince": "2026-10-13",
     "statsPath": "/stats",
     "historyPath": "/stats/history",
+    "historyLive": false,
     "timeoutMs": 75000,
     "policyBands": [
       { "label": "Equities", "min": 40, "max": 75 },

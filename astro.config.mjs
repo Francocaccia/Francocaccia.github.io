@@ -7,6 +7,6 @@ export default defineConfig({
   trailingSlash: 'always',
   build: { format: 'directory' },
   compressHTML: true,
-  integrations: [sitemap()],
+  integrations: [sitemap({ filter: (page) => !page.endsWith('/404/') })],
   devToolbar: { enabled: false },
 });

@@ -34,7 +34,7 @@ console.log(`Compiling ${sources.length} C++ files to WebAssembly...`);
 runEmcc([
   ...sources.map((f) => relative(root, f)),
   '-I', 'cpp/include',
-  '-std=c++20', '-O2', '-Wall', '-Wextra',
+  '-std=c++20', ...(process.env.FC_OPT ?? '-Oz').split(' '), '-Wall', '-Wextra',
   '-fwasm-exceptions',
   '-sMODULARIZE=1', '-sEXPORT_ES6=1', '-sEXPORT_NAME=createCore',
   '-sENVIRONMENT=web,node',

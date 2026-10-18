@@ -48,6 +48,9 @@ jobs:
         env:
           PRIVATE_TERMS: ${{ secrets.PRIVATE_TERMS }}
 
+      - name: Check internal links and anchors
+        run: npm run check:links
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

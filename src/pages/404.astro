@@ -1,0 +1,17 @@
+---
+import GatewayLayout from '../layouts/GatewayLayout.astro';
+import { site, withBase } from '../lib/site';
+import { enabledModes } from '../config';
+---
+
+<GatewayLayout noindex title="Page not found" description={`This page does not exist. Pick one of the views of ${site.name}'s portfolio.`}>
+  <div class="wrap">
+    <h1>Page not found</h1>
+    <p>That address does not lead anywhere. Try one of these:</p>
+    <ul>
+      <li><a href={withBase('/')}>The gateway: choose a view</a></li>
+      {enabledModes().map((m) => <li><a href={withBase(m.path)}>{m.label} view</a></li>)}
+      <li><a href={withBase('/summary/')}>Quick view: summary and resume</a></li>
+    </ul>
+  </div>
+</GatewayLayout>

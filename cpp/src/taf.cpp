@@ -225,8 +225,8 @@ Json decodeTaf(const Json& in) {
   for (std::size_t k = 0; k < periods.size(); ++k) {
     const Period& p = periods[k];
     std::string text = describe(p.el);
-    html += "<li class=\"tf-p tf-" + p.kind + "\"><h4><span class=\"tf-when\">" + esc(when(p)) + "</span> " + catBadge(p.cat.name) +
-            "</h4><p class=\"mx-raw\">" + groupsHtml(p.groups) + "</p><p class=\"tf-text\">" + esc(text) + "</p>";
+    html += "<li class=\"tf-p tf-" + p.kind + "\"><h3><span class=\"tf-when\">" + esc(when(p)) + "</span> " + catBadge(p.cat.name) +
+            "</h3><p class=\"mx-raw\">" + groupsHtml(p.groups) + "</p><p class=\"tf-text\">" + esc(text) + "</p>";
     if (!p.main) html += "<p class=\"tf-note\">Category here combines this change with the prevailing conditions: " + esc(p.cat.why) + "</p>";
     else html += "<p class=\"tf-note\">" + esc(p.cat.why) + "</p>";
     html += "</li>";

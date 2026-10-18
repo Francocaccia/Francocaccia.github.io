@@ -24,7 +24,7 @@ const root = document.querySelector<HTMLElement>('[data-finance]');
 if (root) start(root);
 
 function start(root: HTMLElement) {
-  const { apiBase = '', statsPath = '', historyPath = '', trackingSince = '' } = root.dataset;
+  const { apiBase = '', statsPath = '', historyPath = '', trackingSince = '', historyLive = 'false' } = root.dataset;
   const timeoutMs = Number(root.dataset.timeout) || 75000;
 
   const tilesNote = root.querySelector<HTMLElement>('[data-tiles-note]');
@@ -77,6 +77,13 @@ function start(root: HTMLElement) {
   }
 
   async function loadHistory() {
+    // Until the bot publishes its history feed, do not request it: that would only log a failed request.
+    if (historyLive !== 'true') {
+      return setNotice(
+        'warming',
+        'Illustrative data shown, not real results. Live data warming up: the bot has not published its history feed yet.',
+      );
+    }
     setNotice(
       'loading',
       'Illustrative data shown, not real results. Checking for live data: the free host can take about a minute to wake.',

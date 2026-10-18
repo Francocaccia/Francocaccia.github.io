@@ -14,12 +14,17 @@ interface Props {
   description: string;
   current: ModeId | 'gateway' | 'summary';
   theme?: 'gateway' | 'finance' | 'terminal' | 'aviation';
+  /** woff2 URLs used above the fold; preloading them stops the text from jumping when the fonts arrive. */
+  fonts?: string[];
+  /** Error pages: no canonical URL, and tell search engines to leave them out. */
+  noindex?: boolean;
 }
 
-const { title, description, current, theme = 'gateway' } = Astro.props;
+const { title, description, current, theme = 'gateway', fonts = [], noindex = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const fullTitle = title === site.name ? title : `${title} | ${site.name}`;
 const coreV = await coreVersion();
+const themeColor = { gateway: '#0e1013', finance: '#07111f', terminal: '#000000', aviation: '#0a0c0d' };
 ---
 
 <!doctype html>
@@ -29,10 +34,12 @@ const coreV = await coreVersion();
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
     <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
     <meta name="generator" content={`Astro, fc-core ${coreV}`} />
-    <meta name="theme-color" content="#0e1013" />
+    <meta name="theme-color" content={themeColor[theme]} />
+    <meta name="color-scheme" content="dark" />
+    {fonts.map((href) => <link rel="preload" as="font" type="font/woff2" href={href} crossorigin />)}
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.name} />
@@ -50,7 +57,7 @@ const coreV = await coreVersion();
       <a class="fc-brand" href={withBase('/')}>{site.name}</a>
       <ModeSwitcher current={current} />
     </header>
-    <main id="main">
+    <main id="main" tabindex="-1">
       <slot />
     </main>
     <footer class="fc-footer">
