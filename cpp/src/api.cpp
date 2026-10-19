@@ -51,6 +51,7 @@ ChartOptions chartOptions(const Json& in) {
   };
   o.width = number("width", o.width, 120, 1600);
   o.height = number("height", o.height, 48, 1200);
+  o.excessHeight = number("excessHeight", 0, 0, 300);
   o.compact = in.at("compact").asBool(false);
   if (in.at("idPrefix").isString()) {
     // Ids are interpolated into markup: keep only safe characters.

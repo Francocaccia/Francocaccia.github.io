@@ -168,6 +168,95 @@ TEST(chart_api_live_and_errors) {
   CHECK(contains(bad.at("error").asString(), "2 trading days"));
 }
 
+size_t count(const std::string& hay, const std::string& needle) {
+  size_t n = 0;
+  for (size_t at = hay.find(needle); at != std::string::npos; at = hay.find(needle, at + 1)) ++n;
+  return n;
+}
+
+TEST(chart_y_axis_has_exactly_five_ticks_and_x_axis_three_labels) {
+  std::vector<Candle> live;
+  std::string error;
+  CHECK(fc::parseHistory(parse(kFeed), live, error));
+  for (const auto& series : {fc::illustrativeSeries(7, 30), fc::illustrativeSeries(3, 8), live}) {
+    for (int width : {720, 360}) {
+      fc::ChartOptions o;
+      o.width = width;
+      o.height = width == 720 ? 360 : 300;
+      const std::string svg = fc::renderChart(series, o).at("svg").asString();
+      CHECK_EQ(count(svg, "class=\"fcz-grid\""), size_t(5));
+      CHECK_EQ(count(svg, "text-anchor=\"end\">"), size_t(6));  // five y tick labels and the last day on the x axis
+      CHECK_EQ(count(svg, "text-anchor=\"start\">"), size_t(1));
+      CHECK_EQ(count(svg, "text-anchor=\"middle\">"), size_t(1));
+    }
+  }
+}
+
+TEST(chart_every_day_has_a_readout_sentence_and_an_excess_value) {
+  std::vector<Candle> live;
+  std::string error;
+  CHECK(fc::parseHistory(parse(kFeed), live, error));
+  Json r = fc::renderChart(live, fc::ChartOptions{});
+  const Json& p1 = r.at("points").at(1);
+  CHECK_EQ(p1.at("ex").asNumber(), 0.7);  // 100.0 - 99.3
+  const std::string sentence = p1.at("readout").asString();
+  CHECK(sentence.rfind("Day 2 (2026-10-14). The bot opened at 99.8 and closed at 100.0 (+0.20%), ", 0) == 0);
+  CHECK(contains(sentence, "0.7 points ahead of the S&P 500 at 99.3."));
+  CHECK(!contains(sentence, "Illustrative"));
+  CHECK(contains(r.at("points").at(2).at("readout").asString(), "(\xE2\x88\x92" "0.40%)"));  // a down day uses a real minus sign
+  CHECK(contains(r.at("points").at(2).at("readout").asString(), "0.3 points behind the S&P 500 at 99.1."));
+
+  // While the data is illustrative the sentence itself says so.
+  fc::ChartOptions o;
+  o.illustrative = true;
+  Json demo = fc::renderChart(fc::illustrativeSeries(7, 24), o);
+  for (const Json& p : demo.at("points").items()) CHECK(p.at("readout").asString().rfind("Illustrative. Day ", 0) == 0);
+  CHECK(contains(demo.at("points").at(23).at("readout").asString(), "Day 24."));
+}
+
+TEST(chart_readout_says_level_when_the_bot_matches_the_market) {
+  std::vector<Candle> series;
+  std::string error;
+  Json feed = parse(R"([{"date":"2026-10-13","c":100,"spy":100,"mix_60_40":100},
+                        {"date":"2026-10-14","c":100.02,"spy":100.0,"mix_60_40":100}])");
+  CHECK(fc::parseHistory(feed, series, error));
+  Json r = fc::renderChart(series, fc::ChartOptions{});
+  CHECK(contains(r.at("points").at(1).at("readout").asString(), "level with the S&P 500 at 100.0."));
+}
+
+TEST(chart_excess_strip_is_optional_and_has_one_bar_per_day) {
+  std::vector<Candle> live;
+  std::string error;
+  CHECK(fc::parseHistory(parse(kFeed), live, error));
+  Json without = fc::renderChart(live, fc::ChartOptions{});
+  CHECK(without.find("excess") == nullptr);
+
+  fc::ChartOptions o;
+  o.excessHeight = 76;
+  Json r = fc::renderChart(live, o);
+  const std::string& ex = r.at("excess").asString();
+  CHECK(contains(ex, "role=\"img\""));
+  CHECK(contains(ex, "viewBox=\"0 0 720 76\""));
+  CHECK_EQ(count(ex, "<rect class=\"fcz-ex "), size_t(3));
+  CHECK_EQ(count(ex, "fcz-ex pos"), size_t(2));  // 0.2 and 0.7 ahead of SPY
+  CHECK_EQ(count(ex, "fcz-ex neg"), size_t(1));  // 98.8 against 99.1
+  CHECK(contains(ex, "class=\"fcz-zero\""));
+  CHECK(r.at("exPlot").at("h").asNumber() == 76.0);
+
+  o.illustrative = true;
+  CHECK(contains(fc::renderChart(fc::illustrativeSeries(7, 12), o).at("excess").asString(), "Illustrative data, not real results."));
+
+  // Compact previews never get a strip.
+  o.compact = true;
+  CHECK(fc::renderChart(live, o).find("excess") == nullptr);
+}
+
+TEST(chart_api_passes_the_strip_height_through) {
+  Json reply = parse(fc::call("chart.illustrative", R"({"days":10,"excessHeight":76})"));
+  CHECK(reply.at("ok").asBool());
+  CHECK(reply.at("result").find("excess") != nullptr);
+}
+
 TEST(chart_end_labels_are_dropped_when_lines_converge) {
   // Bot, SPY and 60/40 all close within a pixel of each other: only the bot label survives.
   std::vector<Candle> series;

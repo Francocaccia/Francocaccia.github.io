@@ -67,13 +67,50 @@ bool isDate(const std::string& s) {
 
 bool plausibleIndex(double v) { return std::isfinite(v) && v >= 20.0 && v <= 500.0; }
 
-// Rounds a span to a "nice" step: 1, 2 or 5 times a power of ten.
-double niceStep(double span, int targetTicks) {
-  double raw = span / std::max(1, targetTicks);
-  double mag = std::pow(10.0, std::floor(std::log10(raw)));
-  double norm = raw / mag;
-  double nice = norm < 1.5 ? 1 : norm < 3.5 ? 2 : norm < 7.5 ? 5 : 10;
-  return nice * mag;
+// The smallest "nice" step (1, 2, 2.5 or 5 times a power of ten) for which five ticks, four steps apart,
+// cover [lo, hi]. The caller then draws the axis from floor(lo / step) * step.
+double axisStep(double lo, double hi) {
+  for (int k = -3; k <= 6; ++k) {
+    double mag = std::pow(10.0, k);
+    for (double m : {1.0, 2.0, 2.5, 5.0}) {
+      double step = m * mag;
+      double base = std::floor(lo / step + 1e-9) * step;
+      if (base + 4.0 * step >= hi - 1e-9) return step;
+    }
+  }
+  return 1000.0;
+}
+
+// Decimals needed to print a multiple of the step exactly.
+int tickDecimals(double step) {
+  if (step >= 1.0 - 1e-9) return 0;
+  return std::fabs(step * 10.0 - std::round(step * 10.0)) < 1e-9 ? 1 : 2;
+}
+
+// "+1.07" or "−1.07" (a real minus sign); zero has no sign.
+std::string signedNum(double v, int decimals) {
+  std::string digits = num(std::fabs(v), decimals);
+  if (digits.find_first_not_of("0.") == std::string::npos) return digits;
+  return (v < 0 ? "\xE2\x88\x92" : "+") + digits;
+}
+
+double round1(double v) { return std::round(v * 10.0) / 10.0; }
+
+// One sentence about one day, for the live readout under the chart. The arithmetic uses the figures as
+// printed, so a reader can check it. Illustrative data says so inside the sentence.
+std::string readoutFor(const Candle& c, std::size_t index, bool illustrative) {
+  std::string out = illustrative ? "Illustrative. " : "";
+  out += "Day " + std::to_string(index + 1);
+  if (isDate(c.label)) out += " (" + c.label + ")";
+  double change = c.o != 0.0 ? (c.c - c.o) / c.o * 100.0 : 0.0;
+  out += ". The bot opened at " + num(c.o, 1) + " and closed at " + num(c.c, 1) + " (" + signedNum(change, 2) + "%), ";
+  double diff = round1(c.c) - round1(c.spy);
+  if (std::fabs(diff) < 0.05) {
+    out += "level with the S&P 500 at " + num(c.spy, 1) + ".";
+  } else {
+    out += num(std::fabs(diff), 1) + " points " + (diff > 0 ? "ahead of" : "behind") + " the S&P 500 at " + num(c.spy, 1) + ".";
+  }
+  return out;
 }
 
 }  // namespace
@@ -179,9 +216,13 @@ Json renderChart(const std::vector<Candle>& s, const ChartOptions& opt) {
     lo = std::min({lo, c.l, c.spy, c.mix});
     hi = std::max({hi, c.h, c.spy, c.mix});
   }
-  double pad = std::max((hi - lo) * 0.08, 0.5);
+  double pad = std::max((hi - lo) * 0.06, 0.3);
   lo -= pad;
   hi += pad;
+  // Exactly five ticks, evenly spaced on round numbers; the axis is stretched to fit them.
+  const double step = axisStep(lo, hi);
+  lo = std::floor(lo / step + 1e-9) * step;
+  hi = lo + 4.0 * step;
   auto Y = [&](double v) { return y1 - (v - lo) / (hi - lo) * (y1 - y0); };
   const double slot = n ? (x1 - x0) / static_cast<double>(n) : 1.0;
   auto X = [&](std::size_t i) { return x0 + slot * (static_cast<double>(i) + 0.5); };
@@ -209,24 +250,24 @@ Json renderChart(const std::vector<Candle>& s, const ChartOptions& opt) {
 
   if (!compact) {
     // Gridlines and y-axis ticks: hairlines, one step off the surface.
-    double step = niceStep(hi - lo, 4);
-    for (double t = std::ceil(lo / step) * step; t <= hi; t += step) {
+    for (int k = 0; k < 5; ++k) {
+      double t = std::round((lo + k * step) * 1e6) / 1e6;
       std::string y = num(Y(t), 1);
       svg += "<line class=\"fcz-grid\" x1=\"" + num(x0, 1) + "\" x2=\"" + num(x1, 1) + "\" y1=\"" + y + "\" y2=\"" + y +
              "\"/><text class=\"fcz-tick\" x=\"" + num(x0 - 8, 1) + "\" y=\"" + num(Y(t) + 4, 1) +
-             "\" text-anchor=\"end\">" + num(t, step < 1 ? 1 : 0) + "</text>";
+             "\" text-anchor=\"end\">" + num(t, tickDecimals(step)) + "</text>";
     }
     // The index base (100) is the one reference line drawn a little stronger.
     std::string by = num(Y(100.0), 1);
     svg += "<line class=\"fcz-base\" x1=\"" + num(x0, 1) + "\" x2=\"" + num(x1, 1) + "\" y1=\"" + by + "\" y2=\"" + by + "\"/>";
-    // X labels: first and last always, middle when there is room.
+    // X labels: day 1, the middle day and the last day, on every size.
     auto xlabel = [&](std::size_t i, const char* anchor) {
       svg += "<text class=\"fcz-tick\" x=\"" + num(i == 0 ? x0 : (i + 1 == n ? x1 : X(i)), 1) + "\" y=\"" +
              std::to_string(H - 8) + "\" text-anchor=\"" + anchor + "\">" + escape(s[i].label) + "</text>";
     };
     if (n >= 1) xlabel(0, "start");
     if (n >= 2) xlabel(n - 1, "end");
-    if (n >= 5 && !narrow) xlabel(n / 2, "middle");
+    if (n >= 3) xlabel(n / 2, "middle");
     if (opt.illustrative) {
       svg += "<text class=\"fcz-badge\" x=\"" + num(x0, 1) + "\" y=\"14\">ILLUSTRATIVE DATA</text>";
     }
@@ -252,6 +293,9 @@ Json renderChart(const std::vector<Candle>& s, const ChartOptions& opt) {
     p.set("label", s[i].label);
     p.set("o", s[i].o).set("h", s[i].h).set("l", s[i].l).set("c", s[i].c);
     p.set("spy", s[i].spy).set("mix", s[i].mix);
+    p.set("ex", round2(s[i].c - s[i].spy));
+    p.set("chg", s[i].o != 0.0 ? round2((s[i].c - s[i].o) / s[i].o * 100.0) : 0.0);
+    p.set("readout", readoutFor(s[i], i, opt.illustrative));
     points.push(std::move(p));
   }
 
@@ -283,8 +327,8 @@ Json renderChart(const std::vector<Candle>& s, const ChartOptions& opt) {
         svg += std::string("<circle class=\"fcz-dot ") + e.cls + "\" cx=\"" + num(cx, 1) + "\" cy=\"" + num(e.y, 1) + "\" r=\"4\"/>";
       }
       if (e.keep) {
-        svg += "<text class=\"fcz-end\" x=\"" + num(x1 + 8, 1) + "\" y=\"" + num(e.y + 4, 1) + "\">" + escape(e.name) + " " +
-               num(e.v, 1) + "</text>";
+        svg += std::string("<text class=\"fcz-end ") + e.cls + "\" x=\"" + num(x1 + 8, 1) + "\" y=\"" + num(e.y + 4, 1) + "\">" +
+               escape(e.name) + " " + num(e.v, 1) + "</text>";
       }
     }
   }
@@ -296,10 +340,11 @@ Json renderChart(const std::vector<Candle>& s, const ChartOptions& opt) {
                       "Daily values indexed to 100 at the start. Percentages only.</caption><thead><tr>"
                       "<th scope=\"col\">Day</th><th scope=\"col\">Open</th><th scope=\"col\">High</th>"
                       "<th scope=\"col\">Low</th><th scope=\"col\">Close</th><th scope=\"col\">SPY</th>"
-                      "<th scope=\"col\">60/40</th></tr></thead><tbody>";
+                      "<th scope=\"col\">60/40</th><th scope=\"col\">Bot minus SPY</th></tr></thead><tbody>";
   for (const Candle& c : s) {
     table += "<tr><th scope=\"row\">" + escape(c.label) + "</th><td>" + num(c.o) + "</td><td>" + num(c.h) + "</td><td>" +
-             num(c.l) + "</td><td>" + num(c.c) + "</td><td>" + num(c.spy) + "</td><td>" + num(c.mix) + "</td></tr>";
+             num(c.l) + "</td><td>" + num(c.c) + "</td><td>" + num(c.spy) + "</td><td>" + num(c.mix) + "</td><td>" +
+             signedNum(c.c - c.spy, 2) + "</td></tr>";
   }
   table += "</tbody></table>";
 
@@ -307,6 +352,45 @@ Json renderChart(const std::vector<Candle>& s, const ChartOptions& opt) {
   plot.set("x0", x0).set("x1", x1).set("y0", y0).set("y1", y1).set("w", W).set("h", H);
 
   Json out = Json::object();
+  if (!compact && opt.excessHeight > 0 && n >= 1) {
+    // The strip under the chart: how far ahead of (above the line) or behind (below) the S&P 500 the bot
+    // closed each day, in index points. Same x scale as the chart, so a day lines up with its candle.
+    const double E = opt.excessHeight;
+    const double ey0 = 8, ey1 = E - 8, mid = (ey0 + ey1) / 2, half = (ey1 - ey0) / 2;
+    double biggest = 0.5;
+    for (const Candle& c : s) biggest = std::max(biggest, std::fabs(c.c - c.spy));
+    const double bound = biggest >= 10.0 ? std::ceil(biggest) : std::ceil(biggest * 2.0) / 2.0;
+    auto V = [&](double v) { return mid - v / bound * half; };
+    const std::string eid = opt.idPrefix + "-et", edid = opt.idPrefix + "-ed";
+    const Candle& last = s.back();
+    std::string edesc = "Bot close minus SPY close for each of " + std::to_string(n) +
+                        " trading days, in index points. Above the line the bot is ahead. Last day: " +
+                        signedNum(last.c - last.spy, 2) + "." + (opt.illustrative ? " Illustrative data, not real results." : "");
+    std::string ex = "<svg class=\"fcz-svg fcz-ex-svg\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + std::to_string(W) + " " +
+                     std::to_string(opt.excessHeight) + "\" role=\"img\" aria-labelledby=\"" + eid + " " + edid +
+                     "\"><title id=\"" + eid + "\">Bot minus SPY, by day</title><desc id=\"" + edid + "\">" + escape(edesc) + "</desc>";
+    for (double v : {bound, -bound}) {
+      std::string y = num(V(v), 1);
+      ex += "<line class=\"fcz-grid\" x1=\"" + num(x0, 1) + "\" x2=\"" + num(x1, 1) + "\" y1=\"" + y + "\" y2=\"" + y +
+            "\"/><text class=\"fcz-tick\" x=\"" + num(x0 - 8, 1) + "\" y=\"" + num(V(v) + 4, 1) + "\" text-anchor=\"end\">" +
+            signedNum(v, 1) + "</text>";
+    }
+    ex += "<line class=\"fcz-zero\" x1=\"" + num(x0, 1) + "\" x2=\"" + num(x1, 1) + "\" y1=\"" + num(mid, 1) + "\" y2=\"" + num(mid, 1) +
+          "\"/><text class=\"fcz-tick\" x=\"" + num(x0 - 8, 1) + "\" y=\"" + num(mid + 4, 1) + "\" text-anchor=\"end\">0</text>"
+          "<text class=\"fcz-end ex\" x=\"" + num(x1 + 8, 1) + "\" y=\"" + num(mid + 4, 1) + "\">Bot vs SPY</text>";
+    for (std::size_t i = 0; i < n; ++i) {
+      double v = s[i].c - s[i].spy;
+      double top = v >= 0 ? V(v) : mid;
+      double height = std::max(1.5, std::fabs(V(v) - mid));
+      ex += std::string("<rect class=\"fcz-ex ") + (v >= 0 ? "pos" : "neg") + "\" x=\"" + num(X(i) - bodyW / 2, 1) + "\" y=\"" +
+            num(top, 1) + "\" width=\"" + num(bodyW, 1) + "\" height=\"" + num(height, 1) + "\"/>";
+    }
+    ex += "</svg>";
+    out.set("excess", ex);
+    Json exPlot = Json::object();
+    exPlot.set("y0", ey0).set("y1", ey1).set("h", E);
+    out.set("exPlot", std::move(exPlot));
+  }
   out.set("svg", svg);
   out.set("table", table);
   out.set("points", std::move(points));
