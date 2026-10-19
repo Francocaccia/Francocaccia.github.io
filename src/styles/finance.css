@@ -686,3 +686,7 @@ table.data,
   .tiles-note { min-height: 2.6em; }
   .chart-notice { min-height: 3.6rem; }
 }
+
+.tech {
+  margin: 0 0 12px;
+}

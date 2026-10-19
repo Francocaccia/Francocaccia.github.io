@@ -1,7 +1,7 @@
 ---
 // Plain "Quick view": the same facts, no theme. Always available, readable without JavaScript.
 import GatewayLayout from '../layouts/GatewayLayout.astro';
-import { site, real } from '../lib/site';
+import { site, real, opt } from '../lib/site';
 
 const email = real(site.email);
 const resume = real(site.resume);
@@ -41,7 +41,7 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
       {
         site.projects.map((p) => (
           <li>
-            <strong>{p.repo ? <a href={p.repo}>{p.name}</a> : p.name}</strong> ({p.statusLabel}). {p.summary}{' '}
+            <strong>{p.repo ? <a href={p.repo}>{p.name}</a> : p.name}</strong> ({p.statusLabel}{opt(p, 'period') && `, ${opt(p, 'period')}`}). {p.summary}{' '}
             <em>Stack: {p.stack.join(', ')}.</em>
           </li>
         ))
@@ -53,7 +53,7 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
       {
         site.experience.map((e) => (
           <li>
-            <strong>{e.role}</strong>, {e.org} ({e.start} to {e.end}). {e.description}
+            <strong>{e.role}</strong>, {e.org}{opt(e, 'place') && `, ${opt(e, 'place')}`} ({e.start} to {e.end}). {e.description}
           </li>
         ))
       }
@@ -64,19 +64,24 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
       {
         site.education.map((e) => (
           <li>
-            {e.degree}, {e.school} (
+            {e.degree}, {e.school}{opt(e, 'place') && `, ${opt(e, 'place')}`} (
             {e.period.startsWith('TODO') ? <span class="todo">years: TODO</span> : e.period})
           </li>
         ))
       }
     </ul>
 
+    <p><strong>Relevant coursework:</strong> {site.coursework.join(', ')}.</p>
+
+    <h2>Technical skills</h2>
+    <p>{site.technicalSkills.join(', ')}.</p>
+
     <h2>Certifications</h2>
     <ul>
       {
         site.certifications.map((c) => (
           <li>
-            {'issuer' in c ? `${c.issuer} ` : ''}{c.name}: {c.status}
+            {'issuer' in c ? `${c.issuer} ` : ''}{c.name}: {c.status}{opt(c, 'detail') && `, ${opt(c, 'detail')}`}
           </li>
         ))
       }

@@ -275,6 +275,9 @@ std::string aboutText(const Site& s) {
 std::string skillsText(const Site& s) {
   std::string t = "# Skills\nTools and languages, by group.\n\n";
   for (const auto& g : s.skillGroups()) t += pad(g.first, 16) + join(g.second, ", ") + "\n";
+  std::vector<std::string> all;
+  for (const Json& item : s.j.at("technicalSkills").items()) all.push_back(item.asString());
+  if (!all.empty()) t += "\nEverything on the resume:\n" + join(all, ", ") + "\n";
   return t;
 }
 
@@ -285,6 +288,7 @@ std::string certsText(const Site& s) {
     if (status == "in-progress") status = "in progress";
     t += pad("[" + status + "]", 14) + str(c, "name");
     if (!str(c, "issuer").empty()) t += " (" + str(c, "issuer") + ")";
+    if (!str(c, "detail").empty()) t += ", " + str(c, "detail");
     t += "\n";
   }
   return t;
@@ -301,7 +305,9 @@ std::string contactText(const Site& s) {
 
 std::string projectText(const Json& p) {
   std::string t = "# " + str(p, "name") + "  [" + str(p, "tag") + "]\n";
-  t += "Status: " + str(p, "statusLabel") + "\n\n" + str(p, "summary") + "\n\n";
+  t += "Status: " + str(p, "statusLabel") + "\n";
+  if (!str(p, "period").empty()) t += "Period: " + str(p, "period") + "\n";
+  t += "\n" + str(p, "summary") + "\n\n";
   std::vector<std::string> stack;
   for (const Json& s : p.at("stack").items()) stack.push_back(s.asString());
   t += "Stack: " + join(stack, ", ") + "\n";
@@ -319,15 +325,20 @@ std::string projectsReadme(const Site& s) {
 }
 
 std::string roleText(const Json& e) {
-  return "# " + str(e, "role") + "\n" + str(e, "org") + ", " + str(e, "start") + " to " + str(e, "end") + "\n\n" +
+  std::string where = str(e, "place").empty() ? "" : ", " + str(e, "place");
+  return "# " + str(e, "role") + "\n" + str(e, "org") + where + ", " + str(e, "start") + " to " + str(e, "end") + "\n\n" +
          str(e, "description") + "\n";
 }
 
 std::string educationText(const Site& s) {
   std::string t = "# Education\n\n";
   for (const Json& e : s.j.at("education").items()) {
-    t += str(e, "degree") + "\n" + str(e, "school") + ", " + orTodo(str(e, "period"), "years") + "\n\n";
+    std::string where = str(e, "place").empty() ? "" : ", " + str(e, "place");
+    t += str(e, "degree") + "\n" + str(e, "school") + where + ", " + orTodo(str(e, "period"), "years") + "\n\n";
   }
+  std::vector<std::string> courses;
+  for (const Json& c : s.j.at("coursework").items()) courses.push_back(c.asString());
+  if (!courses.empty()) t += "Relevant coursework: " + join(courses, ", ") + ".\n";
   return t;
 }
 

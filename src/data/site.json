@@ -19,7 +19,8 @@
       "tag": "ATB",
       "status": "live",
       "statusLabel": "Live, paper trading",
-      "summary": "Autonomous long-only portfolio manager in Go. Indicators, news and an LLM decide buy, sell or hold across stocks, ETFs, bond ETFs and cash. Bracket orders on Alpaca, risk limits enforced in code. Benchmarked against SPY and a 60/40 portfolio.",
+      "period": "January 2026 to present",
+      "summary": "Autonomous long-only portfolio manager in Go. Indicators, news and an LLM decide buy, sell or hold across stocks, ETFs, bond ETFs and cash. Bracket orders on Alpaca, risk limits enforced in code. Paper-tested with autonomous, real-time trade execution. Benchmarked against SPY and a 60/40 portfolio.",
       "stack": ["Go", "Python", "Gemini", "Alpaca", "Docker", "Render"],
       "repo": "https://github.com/Francocaccia/AutoTradingBot"
     },
@@ -29,8 +30,9 @@
       "tag": "SQR",
       "status": "shipped",
       "statusLabel": "Shipped, public",
-      "summary": "Equity report generator for a student-managed investment fund: ticker in, two-page PDF out with weekly and monthly indicators, charts, narrative and a rule-based signal.",
-      "stack": ["Go", "React", "MongoDB", "Firebase"],
+      "period": "January 2026 to April 2026",
+      "summary": "Equity report generator for a student-managed investment fund: ticker in, two-page PDF out with weekly and monthly indicators, charts, narrative and a rule-based signal. Saves 5+ hours a week of manual analysis and feeds the fund's decisions.",
+      "stack": ["Go", "Python", "React", "MongoDB", "Firebase"],
       "repo": "https://github.com/Francocaccia/Stock-Quant-Reports"
     },
     {
@@ -39,7 +41,8 @@
       "tag": "DEFI",
       "status": "shipped",
       "statusLabel": "Shipped, public, not audited",
-      "summary": "Over-collateralized lending with Chainlink price feeds, utilization-based interest, health-factor liquidations and explicit bad debt. Its math is checked against an independent C++ reference model. Educational project, not audited, never used with real funds.",
+      "period": "October 2026",
+      "summary": "Over-collateralized lending protocol in Solidity using Foundry and Chainlink price feeds, with utilization-based interest, health-factor liquidations and explicit bad debt. Verified against an independent C++ model; fuzz, invariant and fork tests at 100% coverage. Educational project, not audited, never used with real funds.",
       "stack": ["Solidity", "Foundry", "Chainlink", "C++"],
       "repo": "https://github.com/Francocaccia/defi-lending-core"
     },
@@ -61,18 +64,30 @@
       "tag": "LEH",
       "role": "Finance & Data Research Assistant",
       "org": "Lehigh University",
-      "start": "2026",
+      "place": "Bethlehem, Pennsylvania",
+      "start": "August 2026",
       "end": "present",
-      "description": "Python pipelines that extract securities-lending data from SEC filings."
+      "description": "Build Python pipelines parsing N-CSR filings from SEC EDGAR into research-ready datasets. Extract securities lending revenue across two fund complexes and two decades of filing formats."
     },
     {
       "id": "exp-fund",
       "tag": "FUND",
       "role": "Quant Analyst & CS Intern",
       "org": "Student-managed investment fund",
-      "start": "2025",
-      "end": "2026",
-      "description": "Market analysis and an automated stock-analysis system."
+      "place": "Lynchburg, Virginia",
+      "start": "March 2025",
+      "end": "August 2026",
+      "description": "Produced quantitative research on analyst-requested tickers for a ~$1.2M fund that outperformed the S&P 500 in 2025 at 0.6 beta. Built the Go/Python analysis system; co-managed the quant team's indicator-driven portfolio."
+    },
+    {
+      "id": "exp-admissions",
+      "tag": "ADM",
+      "role": "International Admissions Assistant",
+      "org": "University of Lynchburg",
+      "place": "Lynchburg, Virginia",
+      "start": "February 2024",
+      "end": "August 2026",
+      "description": "Evaluated and processed documents and guided incoming students with government documents."
     }
   ],
 
@@ -80,33 +95,37 @@
     {
       "degree": "M.S. Aerospace & Space Systems Engineering",
       "school": "Lehigh University",
+      "place": "Bethlehem, Pennsylvania",
       "period": "August 2026 to present"
     },
     {
-      "degree": "B.S. Computer Science, minors in Mathematics and Business",
+      "degree": "B.S. Computer Science, minor in Mathematics",
       "school": "University of Lynchburg",
+      "place": "Lynchburg, Virginia",
       "period": "January 2024 to August 2026"
     }
   ],
 
+  "coursework": ["Artificial Intelligence", "Machine Learning", "Data Structures", "Databases", "Operating Systems", "Architecture & Assembly", "Applied Regression", "Accounting", "Business Statistics", "Investment Fundamentals", "Finance"],
+
   "certifications": [
-    { "name": "Commercial Pilot + Instrument Rating", "issuer": "ANAC (Argentina)", "status": "active", "track": "aviation" },
+    { "name": "Commercial Pilot + Instrument Rating", "issuer": "ANAC (Argentina)", "status": "active", "track": "aviation", "detail": "220+ flight hours" },
     { "name": "Commercial Pilot", "issuer": "FAA", "status": "in-progress", "track": "aviation" },
-    { "name": "Flight Dispatcher", "status": "in-progress", "track": "aviation" },
+    { "name": "Flight Dispatcher", "status": "in-progress", "track": "aviation", "detail": "Since January 2026" },
     { "name": "Restricted Radiotelephone Operator", "issuer": "FCC", "status": "active", "track": "aviation" },
-    { "name": "Bloomberg Market Concepts", "issuer": "Bloomberg", "status": "complete", "track": "finance" }
+    { "name": "Bloomberg Market Concepts", "issuer": "Bloomberg", "status": "complete", "track": "finance", "detail": "April 2026" }
   ],
 
   "languages": [
     { "name": "Spanish", "level": "native" },
     { "name": "English", "level": "bilingual" },
     { "name": "Portuguese", "level": "fluent" },
-    { "name": "Chinese", "level": "basic" }
+    { "name": "Mandarin", "level": "basic" }
   ],
 
   "skills": [
-    { "name": "Go", "group": "Languages", "state": "used", "usedIn": ["autotradingbot", "stock-quant-reports", "mev-and-chain"] },
-    { "name": "Python", "group": "Languages", "state": "used", "usedIn": ["autotradingbot", "exp-lehigh"] },
+    { "name": "Go", "group": "Languages", "state": "used", "usedIn": ["autotradingbot", "stock-quant-reports", "exp-fund", "mev-and-chain"] },
+    { "name": "Python", "group": "Languages", "state": "used", "usedIn": ["autotradingbot", "stock-quant-reports", "exp-lehigh", "exp-fund"] },
     { "name": "Solidity", "group": "Languages", "state": "used", "usedIn": ["defi-lending"] },
     { "name": "C++", "group": "Languages", "state": "used", "usedIn": ["defi-lending"] },
     { "name": "React", "group": "Frontend", "state": "used", "usedIn": ["stock-quant-reports"] },
@@ -119,6 +138,8 @@
     { "name": "Chainlink", "group": "APIs and models", "state": "used", "usedIn": ["defi-lending"] },
     { "name": "Foundry", "group": "Tooling", "state": "used", "usedIn": ["defi-lending"] }
   ],
+
+  "technicalSkills": ["Assembly", "C", "C++", "C#", "Go", "Python", "Rust", "Java", "Node.js", "React", "Solidity", "Foundry", "TypeScript", "PHP", "MATLAB", "MySQL", "MongoDB", "Azure", "Docker", "Google Cloud Run", "Firebase", "Linux", "Git", "Flex & Bison"],
 
   "airports": [
     { "icao": "SABE", "name": "Buenos Aires Aeroparque", "role": "Home", "lat": -34.5592, "lon": -58.4156 },

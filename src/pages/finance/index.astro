@@ -3,7 +3,7 @@
 // Everything is static HTML. The chart and tiles show an honest fallback until the
 // bot's public feeds answer; src/scripts/finance-live.ts upgrades them in the browser.
 import FinanceLayout from '../../layouts/FinanceLayout.astro';
-import { site, real } from '../../lib/site';
+import { site, real, opt } from '../../lib/site';
 import { illustrativeChart } from '../../lib/charts';
 
 const bot = site.bot;
@@ -24,6 +24,8 @@ const places = [
   ...site.projects.map((p) => ({ id: p.id, tag: p.tag, built: p.status === 'live' || p.status === 'shipped', name: p.name })),
   ...site.experience.map((e) => ({ id: e.id, tag: e.tag, built: true, name: `${e.role}, ${e.org}` })),
 ];
+const usedPlaceIds = new Set(site.skills.flatMap((s) => s.usedIn));
+const heatPlaces = places.filter((p) => usedPlaceIds.has(p.id));
 const skillRows = site.skills
   .map((s) => ({ ...s, builtCount: s.usedIn.filter((id) => places.find((p) => p.id === id)?.built).length }))
   .sort((a, b) => b.builtCount - a.builtCount || a.name.localeCompare(b.name));
@@ -153,7 +155,7 @@ const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', n
                     <strong>{p.name}</strong>
                     <span class="row-sub">{p.summary}</span>
                   </td>
-                  <td><span class={statusClass(p.status)}>{p.statusLabel}</span></td>
+                  <td><span class={statusClass(p.status)}>{p.statusLabel}</span>{opt(p, 'period') && <span class="row-sub">{opt(p, 'period')}</span>}</td>
                   <td class="chips">{p.stack.map((s) => <span class="chip">{s}</span>)}</td>
                   <td>{p.repo ? <a href={p.repo} aria-label={`GitHub repository for ${p.name}`}>GitHub</a> : <span class="muted">No public repo</span>}</td>
                 </tr>
@@ -231,7 +233,7 @@ const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', n
           <thead>
             <tr>
               <th scope="col">Skill</th>
-              {places.map((p) => <th scope="col" title={p.name}>{p.tag}</th>)}
+              {heatPlaces.map((p) => <th scope="col" title={p.name}>{p.tag}</th>)}
               <th scope="col">Built</th>
             </tr>
           </thead>
@@ -240,7 +242,7 @@ const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', n
               skillRows.map((s) => (
                 <tr>
                   <th scope="row">{s.name}<span class="row-sub">{s.group}</span></th>
-                  {places.map((p) => {
+                  {heatPlaces.map((p) => {
                     const used = s.usedIn.includes(p.id);
                     const cls = !used ? 'cell' : p.built ? `cell on l${Math.min(s.builtCount, 3)}` : 'cell plan';
                     const word = !used ? 'not used' : p.built ? 'used' : 'planned';
@@ -259,8 +261,10 @@ const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', n
         <li><span class="swatch on l3"></span>3 or more</li>
         <li><span class="swatch plan"></span>Planned, not built yet</li>
       </ul>
+      <h3 class="sub-h">Everything on the resume</h3>
+      <p class="tech">{site.technicalSkills.map((t) => <span class="chip">{t}</span>)}</p>
       <p class="row-sub">
-        Columns: {places.map((p) => `${p.tag} = ${p.name}`).join('; ')}.
+        Columns: {heatPlaces.map((p) => `${p.tag} = ${p.name}`).join('; ')}.
       </p>
     </section>
 
@@ -275,7 +279,7 @@ const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', n
             site.experience.map((e) => (
               <li>
                 <p class="when">{e.start} to {e.end}</p>
-                <p><strong>{e.role}</strong>, {e.org}</p>
+                <p><strong>{e.role}</strong>, {e.org}{opt(e, 'place') && `, ${opt(e, 'place')}`}</p>
                 <p class="muted">{e.description}</p>
               </li>
             ))
@@ -287,11 +291,13 @@ const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', n
             site.education.map((e) => (
               <li>
                 <p class="when">{e.period.startsWith('TODO') ? <span class="todo">years: TODO</span> : e.period}</p>
-                <p><strong>{e.degree}</strong>, {e.school}</p>
+                <p><strong>{e.degree}</strong>, {e.school}{opt(e, 'place') && `, ${opt(e, 'place')}`}</p>
               </li>
             ))
           }
         </ul>
+        <h3 class="sub-h">Relevant coursework</h3>
+        <p class="muted">{site.coursework.join(', ')}.</p>
         <h3 class="sub-h">Languages</h3>
         <p class="muted">{site.languages.map((l) => `${l.name} (${l.level})`).join(', ')}</p>
       </section>
@@ -314,7 +320,7 @@ const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', n
               {
                 site.certifications.map((c) => (
                   <tr>
-                    <th scope="row">{c.name}</th>
+                    <th scope="row">{c.name}{opt(c, 'detail') && <span class="row-sub">{opt(c, 'detail')}</span>}</th>
                     <td>{'issuer' in c ? c.issuer : <span class="muted">—</span>}</td>
                     <td><span class={`st st-cert-${c.status}`}>{certStatus[c.status]}</span></td>
                   </tr>

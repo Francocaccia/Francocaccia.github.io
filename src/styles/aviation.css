@@ -640,3 +640,11 @@ button:disabled {
 @media (max-width: 420px) {
   .panel { padding: 14px 14px; }
 }
+
+.row-sub {
+  display: block;
+  margin-top: 2px;
+  color: var(--fg-muted);
+  font-size: 0.82rem;
+  font-weight: 400;
+}

@@ -210,6 +210,16 @@ std::vector<Issue> checkSite(const Json& site, const std::vector<std::string>& f
   for (const char* key : {"name", "location", "positioning", "openTo", "email", "resume", "photo", "footer"}) {
     c.need(site, "", key, Json::Type::String);
   }
+  for (const char* key : {"technicalSkills", "coursework"}) {
+    if (const Json* list = c.need(site, "", key, Json::Type::Array)) {
+      if (list->items().empty()) c.error(key, "must not be empty");
+      std::size_t i = 0;
+      for (const Json& item : list->items()) {
+        if (!item.isString() || item.asString().empty()) c.error(std::string(key) + "[" + std::to_string(i) + "]", "must be a non-empty string");
+        ++i;
+      }
+    }
+  }
   if (const Json* links = c.need(site, "", "links", Json::Type::Object)) {
     c.need(*links, "links", "github", Json::Type::String);
     c.need(*links, "links", "linkedin", Json::Type::String);

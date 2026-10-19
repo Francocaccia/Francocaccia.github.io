@@ -11,6 +11,12 @@ export const isTodo = (value: unknown): boolean =>
 /** Returns the value, or null when it is still a placeholder. */
 export const real = (value: string | null | undefined): string | null => (isTodo(value) ? null : (value as string));
 
+/** Reads an optional text field that only some entries in the data file have. */
+export const opt = (entry: object, key: string): string => {
+  const v = (entry as Record<string, unknown>)[key];
+  return typeof v === 'string' ? v : '';
+};
+
 export const withBase = (path: string): string => {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   return `${base}${path}`;

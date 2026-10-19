@@ -17,17 +17,19 @@ const char* kSite = R"({
   "email":"TODO: add email","resume":"TODO: add resume","photo":"TODO","footer":"f",
   "projects":[
     {"id":"autotradingbot","name":"AutoTradingBot","tag":"ATB","status":"live","statusLabel":"Live, paper trading",
-     "summary":"Long-only portfolio manager in Go.","stack":["Go","Python"],"repo":"https://github.com/Francocaccia/AutoTradingBot"},
+     "period":"January 2026 to present","summary":"Long-only portfolio manager in Go.","stack":["Go","Python"],"repo":"https://github.com/Francocaccia/AutoTradingBot"},
     {"id":"defi-lending","name":"DeFi lending protocol","tag":"DEFI","status":"shipped","statusLabel":"Shipped",
      "summary":"Lending with Chainlink.","stack":["Solidity"],"repo":"https://github.com/Francocaccia/defi-lending-core"},
     {"id":"mev-and-chain","name":"MEV detector","tag":"MEV","status":"planned","statusLabel":"Planned",
      "summary":"A detector.","stack":["Go"],"repo":null}],
   "experience":[
-    {"id":"exp-lehigh","role":"Research Assistant","org":"Lehigh University","start":"2026","end":"present",
+    {"id":"exp-lehigh","role":"Research Assistant","org":"Lehigh University","place":"Bethlehem, Pennsylvania","start":"2026","end":"present",
      "description":"Python pipelines."},
     {"id":"exp-fund","role":"Quant Analyst","org":"A fund","start":"2025","end":"2026","description":"Market analysis."}],
-  "education":[{"degree":"M.S. Aerospace","school":"Lehigh University","period":"2026 to present"}],
-  "certifications":[{"name":"Commercial Pilot","issuer":"ANAC","status":"active"},
+  "education":[{"degree":"M.S. Aerospace","school":"Lehigh University","place":"Bethlehem, Pennsylvania","period":"2026 to present"}],
+  "coursework":["Finance","Machine Learning"],
+  "technicalSkills":["Assembly","Go","Flex & Bison"],
+  "certifications":[{"name":"Commercial Pilot","issuer":"ANAC","status":"active","detail":"220+ flight hours"},
                     {"name":"Flight Dispatcher","status":"in-progress"}],
   "languages":[{"name":"Spanish","level":"native"},{"name":"English","level":"bilingual"}],
   "skills":[{"name":"Go","group":"Languages","state":"used","usedIn":["autotradingbot"]},
@@ -167,6 +169,17 @@ TEST(term_cat_reads_files_and_explains_mistakes) {
   CHECK(has(run(t, "cat projects").text(), "is a folder"));
   CHECK(has(run(t, "cat").text(), "Usage: cat <file>"));
   CHECK(has(run(t, "cat about.md contact.txt").text(), "--- contact.txt"));
+}
+
+TEST(term_files_carry_the_resume_details) {
+  fc::Term t = makeTerm();
+  CHECK(has(run(t, "cat experience/lehigh.md").text(), "Lehigh University, Bethlehem, Pennsylvania, 2026 to present"));
+  CHECK(has(run(t, "cat experience/education.md").text(), "Lehigh University, Bethlehem, Pennsylvania, 2026 to present"));
+  CHECK(has(run(t, "cat experience/education.md").text(), "Relevant coursework: Finance, Machine Learning."));
+  CHECK(has(run(t, "cat certs.txt").text(), "Commercial Pilot (ANAC), 220+ flight hours"));
+  CHECK(has(run(t, "cat skills.txt").text(), "Everything on the resume:"));
+  CHECK(has(run(t, "cat skills.txt").text(), "Assembly, Go, Flex & Bison"));
+  CHECK(has(run(t, "cat projects/autotradingbot.md").text(), "Period: January 2026 to present"));
 }
 
 TEST(term_cat_turns_urls_into_links_and_marks_placeholders) {
