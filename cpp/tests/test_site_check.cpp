@@ -24,6 +24,8 @@ const char* kValidSite = R"({
               "examples":[{"label":"l","raw":"KABE 181451Z 00000KT 10SM CLR 09/M01 A3062"}],
               "meetsCode":[{"habit":"h","inFlight":"a","inCode":"b"}]},
   "weather":{"KABE":{"raw":"KABE 1","observedAt":"2026-10-16T17:51:00Z","sample":true}},
+  "highlights":[{"id":"h","value":"220+","label":"flight hours","source":"certifications"}],
+  "finance":{"headline":["A.","B.","C."],"salutation":"Dear reader,","letter":"l","quote":"Long-only."},
   "bot":{"trackingSince":"2026-10-13","apiBase":"https://x","statsPath":"/stats","historyPath":"/stats/history","historyLive":false,"benchmarks":["SPY"],
          "timeoutMs":75000,
          "policyBands":[{"label":"Equities","min":40,"max":75}],
@@ -102,6 +104,25 @@ TEST(site_check_requires_risk_controls_and_sane_timeout) {
   bot.set("riskControls", load("[]"));
   bot.set("timeoutMs", 5);
   site.set("bot", bot);
+  CHECK_EQ(count(fc::checkSite(site, {}), Issue::Severity::Error), 2);
+}
+
+TEST(site_check_validates_finance_copy_and_highlights) {
+  Json site = load(kValidSite);
+  // The pull quote must be one of the risk controls, never a separate claim.
+  Json fin = site.at("finance");
+  fin.set("quote", "Something else.");
+  site.set("finance", fin);
+  auto issues = fc::checkSite(site, {});
+  CHECK_EQ(count(issues, Issue::Severity::Error), 1);
+  CHECK_EQ(issues[0].path, std::string("finance.quote"));
+
+  // Three words in the headline, and every highlight names its value, label and source.
+  site = load(kValidSite);
+  fin = site.at("finance");
+  fin.set("headline", load(R"(["A.","B."])"));
+  site.set("finance", fin);
+  site.set("highlights", load(R"([{"id":"h","value":"5+","label":"hours"}])"));
   CHECK_EQ(count(fc::checkSite(site, {}), Issue::Severity::Error), 2);
 }
 

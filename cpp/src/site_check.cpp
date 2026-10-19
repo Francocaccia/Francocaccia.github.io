@@ -302,6 +302,32 @@ std::vector<Issue> checkSite(const Json& site, const std::vector<std::string>& f
     }
   }
 
+  // Finance view copy and the figures in its numbers row. Each figure points at the entry it comes from.
+  checkArrayOfObjects(c, site, "highlights", [&](const Json& h, const std::string& path) {
+    for (const char* k : {"id", "value", "label", "source"}) c.need(h, path, k, Json::Type::String);
+  });
+  if (const Json* fin = c.need(site, "", "finance", Json::Type::Object)) {
+    c.need(*fin, "finance", "salutation", Json::Type::String);
+    c.need(*fin, "finance", "letter", Json::Type::String);
+    const Json* quote = c.need(*fin, "finance", "quote", Json::Type::String);
+    if (const Json* words = c.need(*fin, "finance", "headline", Json::Type::Array)) {
+      if (words->items().size() != 3) c.error("finance.headline", "must have exactly 3 words");
+      std::size_t i = 0;
+      for (const Json& w : words->items()) {
+        if (!w.isString() || w.asString().empty()) c.error("finance.headline[" + std::to_string(i) + "]", "must be a non-empty string");
+        ++i;
+      }
+    }
+    // The pull quote is one of the bot's risk controls, not a separate claim.
+    const Json* bot = site.find("bot");
+    const Json* controls = bot ? bot->find("riskControls") : nullptr;
+    if (quote && controls && controls->isArray() && !controls->items().empty()) {
+      bool found = false;
+      for (const Json& r : controls->items()) found = found || (r.isString() && r.asString() == quote->asString());
+      if (!found) c.error("finance.quote", "must match one of bot.riskControls");
+    }
+  }
+
   if (const Json* bot = c.need(site, "", "bot", Json::Type::Object)) checkBot(c, *bot);
 
   c.scan(site, "");

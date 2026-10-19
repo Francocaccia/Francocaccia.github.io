@@ -191,6 +191,19 @@
       }
     ]
   },
+  "highlights": [
+    { "id": "flight-hours", "value": "220+", "label": "flight hours", "source": "certifications: Commercial Pilot + Instrument Rating (ANAC)" },
+    { "id": "defi-coverage", "value": "100%", "label": "test coverage, DeFi lending", "source": "projects: DeFi lending protocol" },
+    { "id": "hours-saved", "value": "5+", "label": "hours saved a week, equity reports", "source": "projects: equity report generator" },
+    { "id": "fund-beta", "value": "0.6", "label": "beta, student-managed fund", "source": "experience: Quant Analyst & CS Intern, student-managed fund" },
+    { "id": "languages", "value": "4", "label": "languages", "source": "languages" }
+  ],
+  "finance": {
+    "headline": ["Quant.", "Software.", "Pilot."],
+    "salutation": "Dear reader,",
+    "letter": "this is a short letter about my work: a portfolio-managing bot that is still being measured, the projects I have shipped, and the record behind them. The bot trades on paper only, and every number about it here is a percentage.",
+    "quote": "Limits live in code, not in the prompt."
+  },
   "bot": {
     "apiBase": "https://autotradingbot-kjr0.onrender.com",
     "trackingSince": "2026-10-13",

@@ -1,339 +1,327 @@
 ---
-// Finance view: an investment-panel read of the same facts.
-// Everything is static HTML. The chart and tiles show an honest fallback until the
-// bot's public feeds answer; src/scripts/finance-live.ts upgrades them in the browser.
+// Finance view (design F4): an annual letter. Everything is static HTML. The chart shows labeled
+// illustrative data until the bot's history feed is live; src/scripts/finance-live.ts upgrades it in the
+// browser and adds the day-by-day inspection, and bot-tiles.ts fills the four performance tiles.
 import FinanceLayout from '../../layouts/FinanceLayout.astro';
+import BotTiles from '../../components/BotTiles.astro';
 import { site, real, opt } from '../../lib/site';
-import { illustrativeChart } from '../../lib/charts';
+import { illustrativeChart, type Variant } from '../../lib/charts';
 
 const bot = site.bot;
-const wide = await illustrativeChart('wide');
-const narrow = await illustrativeChart('narrow');
+const fin = site.finance;
+const year = bot.trackingSince.slice(0, 4);
+const [atb, ...others] = site.projects;
+const quote = fin.quote;
+const controls = bot.riskControls.filter((r) => r !== quote);
 
-const tiles = [
-  { id: 'return', label: 'Return' },
-  { id: 'vs_spy', label: 'vs SPY' },
-  { id: 'vs_6040', label: 'vs 60/40' },
-  { id: 'max_drawdown', label: 'Max drawdown' },
-];
+// Three chart sizes, one shown at a time by CSS (phone, tablet, desktop).
+const variants: Variant[] = ['narrow', 'mid', 'wide'];
+const charts = Object.fromEntries(await Promise.all(variants.map(async (v) => [v, await illustrativeChart(v)]))) as Record<
+  Variant,
+  Awaited<ReturnType<typeof illustrativeChart>>
+>;
+const last = charts.wide.points[charts.wide.points.length - 1];
 
-const atb = site.projects[0];
+// Skills by where they were used (quiet list, not a heatmap).
+const built = new Set(
+  [...site.projects.filter((p) => p.status === 'live' || p.status === 'shipped').map((p) => p.id), ...site.experience.map((e) => e.id)],
+);
+const skillGroups = [...new Set(site.skills.map((s) => s.group))].map((group) => ({
+  group,
+  skills: site.skills
+    .filter((s) => s.group === group)
+    .map((s) => ({ name: s.name, count: s.usedIn.filter((id) => built.has(id)).length }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+}));
 
-// Skill heatmap: skills by place of use. Intensity is how many built things use the skill.
-const places = [
-  ...site.projects.map((p) => ({ id: p.id, tag: p.tag, built: p.status === 'live' || p.status === 'shipped', name: p.name })),
-  ...site.experience.map((e) => ({ id: e.id, tag: e.tag, built: true, name: `${e.role}, ${e.org}` })),
-];
-const usedPlaceIds = new Set(site.skills.flatMap((s) => s.usedIn));
-const heatPlaces = places.filter((p) => usedPlaceIds.has(p.id));
-const skillRows = site.skills
-  .map((s) => ({ ...s, builtCount: s.usedIn.filter((id) => places.find((p) => p.id === id)?.built).length }))
-  .sort((a, b) => b.builtCount - a.builtCount || a.name.localeCompare(b.name));
-
-const certStatus: Record<string, string> = { active: 'Active', 'in-progress': 'In progress', complete: 'Complete' };
+const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', next: 'Up next', planned: 'Planned' };
+const certStatus: Record<string, string> = { active: 'active', 'in-progress': 'in progress', complete: 'complete' };
 const email = real(site.email);
 const resume = real(site.resume);
-const statusClass = (s: string) => `st st-${s}`;
-const statusWord: Record<string, string> = { live: 'Live', shipped: 'Shipped', next: 'Up next', planned: 'Planned' };
+const licenseLine = site.certifications
+  .map((c) => `${c.name}${'issuer' in c ? ` (${c.issuer})` : ''}, ${certStatus[c.status]}`)
+  .join(' · ');
+const pad = (n: number) => String(n).padStart(2, '0');
 ---
 
 <FinanceLayout
   title="Finance view"
-  description={`${site.name}: investment-panel view. A paper-trading bot against SPY and a 60/40 portfolio, projects, policy bands and risk controls. Paper trading only.`}
+  description={`${site.name}: an annual letter. A paper-trading bot against the S&P 500 and a 60/40 portfolio, the projects shipped and the record behind them. Paper trading only.`}
 >
   <div
-    class="wrap fin"
+    class="wrap letter"
     data-finance
     data-api-base={bot.apiBase}
-    data-stats-path={bot.statsPath}
     data-history-path={bot.historyPath}
     data-history-live={String(bot.historyLive)}
     data-timeout={bot.timeoutMs}
-    data-tracking-since={bot.trackingSince}
   >
-    <header class="fin-head">
-      <p class="eyebrow">Investment panel / paper trading only</p>
-      <h1>{site.name}</h1>
-      <p class="fin-lead">{site.positioning}</p>
-      <ul class="tape" aria-label="Project symbols and status">
+    <!-- Masthead -->
+    <p class="mast">
+      <span>{site.name}</span>
+      <span>Annual letter · {year}</span>
+      <span>Paper trading only</span>
+    </p>
+
+    <!-- Hero -->
+    <header class="hero">
+      <h1 class="headline">
+        <span class="visually-hidden">{site.name}: </span>
+        <span class="w">{fin.headline[0]}</span>
+        <span class="w">{fin.headline[1]}</span>
+        <span class="w accent">{fin.headline[2]}</span>
+      </h1>
+      <div class="hero-text">
+        <p>{fin.salutation} {fin.letter}</p>
+        <p>{site.positioning} {site.openTo}</p>
+      </div>
+    </header>
+
+    <!-- Numbers -->
+    <ul class="numbers" aria-label="By the numbers">
+      {
+        site.highlights.map((h) => (
+          <li>
+            <span class="n">{h.value}</span>
+            <span class="l">{h.label}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    <!-- Chapter 01 -->
+    <section class="chapter" aria-labelledby="c1">
+      <p class="kicker">Chapter 01</p>
+      <h2 id="c1" class="chap">The bot</h2>
+
+      <div class="two">
+        <div>
+          <p class="status-line">
+            <span class="status status-{atb.status}">{statusWord[atb.status]}</span>
+            <span>{atb.name} · {atb.statusLabel}</span>
+            {opt(atb, 'period') && <span>· {opt(atb, 'period')}</span>}
+          </p>
+          <p class="dropcap">{atb.summary}</p>
+          <ul class="stack" aria-label="Stack">
+            {atb.stack.map((s) => <li>{s}</li>)}
+          </ul>
+          {
+            atb.repo && (
+              <p class="mini-link">
+                <a href={atb.repo} aria-label={`Source on GitHub: ${atb.name}`}>Source on GitHub</a>
+              </p>
+            )
+          }
+        </div>
+        <figure class="pull">
+          <blockquote>
+            <p>{quote}</p>
+          </blockquote>
+          <figcaption>Risk control {bot.riskControls.indexOf(quote) + 1} of {bot.riskControls.length}. The others are in the notes below.</figcaption>
+        </figure>
+      </div>
+
+      <h3 class="sub">How it has done so far</h3>
+      <BotTiles class="tiles-f4" />
+
+      <h3 class="sub">Policy bands, the share of the portfolio each may hold</h3>
+      <ul class="bands">
         {
-          site.projects.map((p) => (
+          bot.policyBands.map((b) => (
             <li>
-              <a href={`#w-${p.id}`}>
-                <span class="sym">{p.tag}</span> <span class={statusClass(p.status)}>{statusWord[p.status]}</span>
-              </a>
+              <span class="band-name">{b.label}</span>
+              <span class="band-track" role="img" aria-label={`${b.label} policy range: ${b.min} to ${b.max} percent of the portfolio`}>
+                <span class="band-fill" style={`left:${b.min}%;width:${b.max - b.min}%`}></span>
+              </span>
+              <span class="band-val">{b.min}–{b.max}%</span>
             </li>
           ))
         }
       </ul>
-      <p class="fin-links">
-        <a href={site.links.github}>GitHub</a>
-        <a href={site.links.linkedin}>LinkedIn</a>
-        {email ? <a href={`mailto:${email}`}>{email}</a> : <span class="todo">email: TODO</span>}
-        {resume ? <a href={resume}>Resume</a> : <span class="todo">resume: TODO</span>}
-      </p>
-    </header>
 
-    <section class="panel" aria-labelledby="bot-h">
-      <div class="panel-head">
-        <h2 id="bot-h">{atb.name} <span class="sym">{atb.tag}</span></h2>
-        <p><span class={statusClass(atb.status)}>{atb.statusLabel}</span></p>
-      </div>
-      <p class="panel-sub">
-        Long-only portfolio manager in Go, benchmarked against SPY and a 60/40 portfolio. Percentages only, indexed to 100 on
-        {bot.trackingSince}. No positions, amounts or share counts are shown.
-      </p>
-
-      <dl class="tiles" data-tiles>
-        {
-          tiles.map((t) => (
-            <div class="tile" data-tile={t.id} data-tone="none">
-              <dt>{t.label}</dt>
-              <dd data-value>—</dd>
-              <dd class="tile-cap" data-caption>tracking since {bot.trackingSince}</dd>
-            </div>
-          ))
-        }
-      </dl>
-      <p class="tiles-note" data-tiles-note>Tiles fill in from the bot's public stats when they load.</p>
-
-      <div class="chart-card">
-        <p class="chart-notice" role="status" data-chart-notice data-state="static">
-          <span class="notice-dot" aria-hidden="true"></span>
-          <span data-notice-text>
-            Illustrative data shown, not real results. Live data warming up: it appears here once the bot's history feed has
-            enough days.
-          </span>
+      <!-- Figure 1 -->
+      <figure class="figure" data-fig data-mix="on" id="figure-1">
+        <figcaption class="cap">Figure 1 · The bot, day by day, against the S&P 500 · Indexed to 100</figcaption>
+        <p class="sample" role="status" data-chart-notice data-state="static">
+          <span data-notice-text>Illustrative data, not real results. The bot's history feed is not published yet, so this chart shows a made-up series that starts at 100.</span>
         </p>
-        <ul class="legend" aria-label="Chart key">
-          <li><span class="key key-candle" aria-hidden="true"></span>Bot, daily candle (filled = up day, hollow = down day)</li>
-          <li><span class="key key-spy" aria-hidden="true"></span>SPY</li>
-          <li><span class="key key-mix" aria-hidden="true"></span>60/40 (SPY/AGG)</li>
-        </ul>
+        <div class="fig-bar">
+          <ul class="key" aria-label="Chart key">
+            <li><i class="k-candle" aria-hidden="true"></i>Bot, daily candle (filled = up day, hollow = down day)</li>
+            <li><i class="k-spy" aria-hidden="true"></i>S&P 500 (SPY)</li>
+            <li class="key-mix"><i class="k-mix" aria-hidden="true"></i>60/40 (SPY/AGG)</li>
+          </ul>
+          <button type="button" class="toggle" aria-pressed="true" data-mix-toggle disabled>60/40 line: on</button>
+        </div>
+
         <div
           class="fcz"
           data-fcz
           tabindex="0"
           role="group"
-          aria-label="Candlestick chart. Use the left and right arrow keys to inspect each day."
+          aria-label="Candlestick chart and excess strip. Use the left and right arrow keys to move between days."
         >
-          <div class="fcz-view wide" data-variant="wide" data-points={JSON.stringify(wide.points)} data-plot={JSON.stringify(wide.plot)} set:html={wide.svg} />
-          <div class="fcz-view narrow" data-variant="narrow" data-points={JSON.stringify(narrow.points)} data-plot={JSON.stringify(narrow.plot)} set:html={narrow.svg} />
-          <div class="fcz-tip" data-tip hidden></div>
-          <p class="visually-hidden" aria-live="polite" data-fcz-live></p>
+          {
+            variants.map((v) => (
+              <div
+                class={`fcz-view ${v}`}
+                data-variant={v}
+                data-points={JSON.stringify(charts[v].points)}
+                data-plot={JSON.stringify(charts[v].plot)}
+                data-explot={JSON.stringify(charts[v].exPlot ?? null)}
+                set:html={charts[v].svg + (charts[v].excess ?? '')}
+              />
+            ))
+          }
         </div>
-        <p class="chart-foot" data-chart-foot>Indexed to 100 at the start. Hover or focus the chart for daily values.</p>
+
+        <div class="fig-nav">
+          <button type="button" class="step" data-step="-1" aria-label="Previous day" disabled>&larr;</button>
+          <p class="readout" aria-live="polite" data-readout>{last.readout}</p>
+          <button type="button" class="step" data-step="1" aria-label="Next day" disabled>&rarr;</button>
+        </div>
+        <dl class="day" aria-label="Selected day" data-day>
+          <div><dt>Open</dt><dd data-f="o">{last.o.toFixed(2)}</dd></div>
+          <div><dt>High</dt><dd data-f="h">{last.h.toFixed(2)}</dd></div>
+          <div><dt>Low</dt><dd data-f="l">{last.l.toFixed(2)}</dd></div>
+          <div><dt>Close</dt><dd data-f="c">{last.c.toFixed(2)}</dd></div>
+          <div><dt>Day change</dt><dd data-f="chg">{(last.chg >= 0 ? '+' : '−') + Math.abs(last.chg).toFixed(2)}%</dd></div>
+          <div><dt>SPY close</dt><dd data-f="spy">{last.spy.toFixed(2)}</dd></div>
+          <div><dt>Bot minus SPY</dt><dd data-f="ex">{(last.ex >= 0 ? '+' : '−') + Math.abs(last.ex).toFixed(2)}</dd></div>
+        </dl>
+        <p class="foot" data-chart-foot>Index points, 100 on the first day. Click or touch the chart, use the arrows, or press the left and right arrow keys.</p>
         <details class="table-view">
           <summary>Table view</summary>
-          <div class="scroll" tabindex="0" role="region" aria-label="Chart values as a table" data-table-host set:html={wide.table} />
+          <div class="scroll" tabindex="0" role="region" aria-label="Chart values as a table" data-table-host set:html={charts.wide.table} />
         </details>
-      </div>
-    </section>
+      </figure>
 
-    <section class="panel" aria-labelledby="watch-h" id="watchlist">
-      <div class="panel-head">
-        <h2 id="watch-h">Watchlist</h2>
-        <p class="panel-meta">Projects, by symbol</p>
-      </div>
-      <div class="scroll" tabindex="0" role="region" aria-label="Project watchlist table">
-        <table class="data">
-          <thead>
-            <tr>
-              <th scope="col">Symbol</th>
-              <th scope="col">Project</th>
-              <th scope="col">Status</th>
-              <th scope="col">Stack</th>
-              <th scope="col">Repo</th>
-            </tr>
-          </thead>
-          <tbody>
+      <!-- Figure 2 -->
+      <figure class="figure" id="figure-2">
+        <figcaption class="cap">Figure 2 · Anatomy of a decision · An example, not a real decision</figcaption>
+        <div class="anatomy">
+          <pre class="code" tabindex="0" aria-label="Example model reply, as JSON"><code>{JSON.stringify(bot.exampleDecision, null, 2)}</code></pre>
+          <ol class="flow">
             {
-              site.projects.map((p) => (
-                <tr id={`w-${p.id}`}>
-                  <th scope="row"><span class="sym">{p.tag}</span></th>
-                  <td>
-                    <strong>{p.name}</strong>
-                    <span class="row-sub">{p.summary}</span>
-                  </td>
-                  <td><span class={statusClass(p.status)}>{p.statusLabel}</span>{opt(p, 'period') && <span class="row-sub">{opt(p, 'period')}</span>}</td>
-                  <td class="chips">{p.stack.map((s) => <span class="chip">{s}</span>)}</td>
-                  <td>{p.repo ? <a href={p.repo} aria-label={`GitHub repository for ${p.name}`}>GitHub</a> : <span class="muted">No public repo</span>}</td>
-                </tr>
+              bot.decisionFlow.map((f) => (
+                <li>
+                  <strong>{f.step}</strong>
+                  <span>{f.text}</span>
+                </li>
               ))
             }
-          </tbody>
-        </table>
-      </div>
+          </ol>
+        </div>
+      </figure>
+
+      <h3 class="sub">Notes: what the bot may not do</h3>
+      <ol class="rules">
+        {controls.map((r) => <li>{r}</li>)}
+      </ol>
     </section>
 
-    <div class="grid-2">
-      <section class="panel" aria-labelledby="policy-h">
-        <div class="panel-head">
-          <h2 id="policy-h">Policy bands</h2>
-          <p class="panel-meta">Share of the portfolio</p>
-        </div>
-        <ul class="bands">
-          {
-            bot.policyBands.map((b) => (
-              <li>
-                <span class="band-name">{b.label}</span>
-                <span
-                  class="band-track"
-                  role="img"
-                  aria-label={`${b.label} policy range: ${b.min} to ${b.max} percent of the portfolio`}
-                >
-                  <span class="band-fill" style={`left:${b.min}%;width:${b.max - b.min}%`}></span>
-                </span>
-                <span class="band-val">{b.min}–{b.max}%</span>
-              </li>
-            ))
-          }
-        </ul>
-        <p class="axis" aria-hidden="true"><span>0%</span><span>50%</span><span>100%</span></p>
-      </section>
-
-      <section class="panel" aria-labelledby="risk-h">
-        <div class="panel-head">
-          <h2 id="risk-h">Risk controls</h2>
-          <p class="panel-meta">Enforced in code</p>
-        </div>
-        <ul class="checks">
-          {bot.riskControls.map((r) => <li>{r}</li>)}
-        </ul>
-      </section>
-    </div>
-
-    <section class="panel" aria-labelledby="anat-h">
-      <div class="panel-head">
-        <h2 id="anat-h">Anatomy of a decision</h2>
-        <p class="panel-meta"><span class="st st-example">Example, not a real decision</span></p>
-      </div>
-      <div class="anatomy">
-        <pre class="code" tabindex="0" aria-label="Example model reply, as JSON"><code>{JSON.stringify(bot.exampleDecision, null, 2)}</code></pre>
-        <ol class="flow">
-          {
-            bot.decisionFlow.map((f) => (
-              <li>
-                <strong>{f.step}</strong>
-                <span>{f.text}</span>
-              </li>
-            ))
-          }
-        </ol>
-      </div>
+    <!-- Chapter 02 -->
+    <section class="chapter" aria-labelledby="c2">
+      <p class="kicker">Chapter 02</p>
+      <h2 id="c2" class="chap">Other projects</h2>
+      <ol class="projects">
+        {
+          others.map((p, i) => (
+            <li class="proj">
+              <div class="proj-meta">
+                <p class="proj-no">{pad(i + 1)}</p>
+                <p><span class={`status status-${p.status}`}>{statusWord[p.status]}</span></p>
+                <p class="when">{opt(p, 'period') || p.statusLabel}</p>
+              </div>
+              <div class="proj-body">
+                <h3 class="proj-title">{p.name}</h3>
+                <p>{p.summary}</p>
+                <ul class="stack" aria-label={`Stack of ${p.name}`}>
+                  {p.stack.map((s) => <li>{s}</li>)}
+                </ul>
+                <p class="mini-link">
+                  {p.repo ? <a href={p.repo} aria-label={`Source on GitHub: ${p.name}`}>Source on GitHub</a> : <span class="muted">No public repository</span>}
+                </p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
     </section>
 
-    <section class="panel" aria-labelledby="heat-h">
-      <div class="panel-head">
-        <h2 id="heat-h">Skill heatmap</h2>
-        <p class="panel-meta">Where each skill is used</p>
-      </div>
-      <div class="scroll" tabindex="0" role="region" aria-label="Skill heatmap table">
-        <table class="data heat">
-          <thead>
-            <tr>
-              <th scope="col">Skill</th>
-              {heatPlaces.map((p) => <th scope="col" title={p.name}>{p.tag}</th>)}
-              <th scope="col">Built</th>
-            </tr>
-          </thead>
-          <tbody>
+    <!-- Chapter 03 -->
+    <section class="chapter" aria-labelledby="c3">
+      <p class="kicker">Chapter 03</p>
+      <h2 id="c3" class="chap">The record</h2>
+      <div class="record">
+        <div class="block">
+          <h3 class="sub">Experience</h3>
+          <ul class="entries">
             {
-              skillRows.map((s) => (
-                <tr>
-                  <th scope="row">{s.name}<span class="row-sub">{s.group}</span></th>
-                  {heatPlaces.map((p) => {
-                    const used = s.usedIn.includes(p.id);
-                    const cls = !used ? 'cell' : p.built ? `cell on l${Math.min(s.builtCount, 3)}` : 'cell plan';
-                    const word = !used ? 'not used' : p.built ? 'used' : 'planned';
-                    return <td class={cls}><span class="visually-hidden">{word}</span></td>;
-                  })}
-                  <td class="num">{s.builtCount}</td>
-                </tr>
+              site.experience.map((e) => (
+                <li>
+                  <p class="when">{e.start} to {e.end}</p>
+                  <p><strong>{e.role}</strong>, {e.org}{opt(e, 'place') && `, ${opt(e, 'place')}`}</p>
+                  <p class="muted">{e.description}</p>
+                </li>
               ))
             }
-          </tbody>
-        </table>
+          </ul>
+        </div>
+        <div class="block">
+          <h3 class="sub">Education</h3>
+          <ul class="entries">
+            {
+              site.education.map((e) => (
+                <li>
+                  <p class="when">{e.period}</p>
+                  <p><strong>{e.degree}</strong>, {e.school}{opt(e, 'place') && `, ${opt(e, 'place')}`}</p>
+                </li>
+              ))
+            }
+          </ul>
+          <p class="muted small">Relevant coursework: {site.coursework.join(', ')}.</p>
+          <h3 class="sub">Languages</h3>
+          <p class="muted">{site.languages.map((l) => `${l.name} (${l.level})`).join(', ')}</p>
+        </div>
       </div>
-      <ul class="heat-key" aria-label="Heatmap key">
-        <li><span class="swatch on l1"></span>Used in 1 built thing</li>
-        <li><span class="swatch on l2"></span>2</li>
-        <li><span class="swatch on l3"></span>3 or more</li>
-        <li><span class="swatch plan"></span>Planned, not built yet</li>
-      </ul>
-      <h3 class="sub-h">Everything on the resume</h3>
-      <p class="tech">{site.technicalSkills.map((t) => <span class="chip">{t}</span>)}</p>
-      <p class="row-sub">
-        Columns: {heatPlaces.map((p) => `${p.tag} = ${p.name}`).join('; ')}.
+
+      <h3 class="sub">Tools, by how often they were used in something built</h3>
+      <div class="skills">
+        {
+          skillGroups.map((g) => (
+            <div>
+              <h4>{g.group}</h4>
+              <ul>
+                {
+                  g.skills.map((s) => (
+                    <li>
+                      {s.name} <span class="count" aria-label={`used in ${s.count} built ${s.count === 1 ? 'thing' : 'things'}`}>{s.count}</span>
+                    </li>
+                  ))
+                }
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+      <p class="muted small">Everything on the resume: {site.technicalSkills.join(', ')}.</p>
+    </section>
+
+    <!-- Footer of the letter -->
+    <footer class="signoff">
+      <p class="lic"><strong>Licenses.</strong> {licenseLine}.</p>
+      <p class="buttons">
+        <a class="btn btn-coral" href={site.links.github}>GitHub</a>
+        <a class="btn btn-line" href={site.links.linkedin}>LinkedIn</a>
+        {resume ? <a class="btn btn-solid" href={resume}>Resume (PDF)</a> : <span class="todo">resume: TODO</span>}
+        {email && <a class="mail" href={`mailto:${email}`}>{email}</a>}
       </p>
-    </section>
-
-    <div class="grid-2">
-      <section class="panel" aria-labelledby="pos-h">
-        <div class="panel-head">
-          <h2 id="pos-h">Positions</h2>
-          <p class="panel-meta">Experience</p>
-        </div>
-        <ul class="timeline">
-          {
-            site.experience.map((e) => (
-              <li>
-                <p class="when">{e.start} to {e.end}</p>
-                <p><strong>{e.role}</strong>, {e.org}{opt(e, 'place') && `, ${opt(e, 'place')}`}</p>
-                <p class="muted">{e.description}</p>
-              </li>
-            ))
-          }
-        </ul>
-        <h3 class="sub-h">Education</h3>
-        <ul class="timeline">
-          {
-            site.education.map((e) => (
-              <li>
-                <p class="when">{e.period.startsWith('TODO') ? <span class="todo">years: TODO</span> : e.period}</p>
-                <p><strong>{e.degree}</strong>, {e.school}{opt(e, 'place') && `, ${opt(e, 'place')}`}</p>
-              </li>
-            ))
-          }
-        </ul>
-        <h3 class="sub-h">Relevant coursework</h3>
-        <p class="muted">{site.coursework.join(', ')}.</p>
-        <h3 class="sub-h">Languages</h3>
-        <p class="muted">{site.languages.map((l) => `${l.name} (${l.level})`).join(', ')}</p>
-      </section>
-
-      <section class="panel" aria-labelledby="lic-h">
-        <div class="panel-head">
-          <h2 id="lic-h">Licenses</h2>
-          <p class="panel-meta">Certifications</p>
-        </div>
-        <div class="scroll" tabindex="0" role="region" aria-label="Licenses table">
-          <table class="data">
-            <thead>
-              <tr>
-                <th scope="col">License</th>
-                <th scope="col">Issuer</th>
-                <th scope="col">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {
-                site.certifications.map((c) => (
-                  <tr>
-                    <th scope="row">{c.name}{opt(c, 'detail') && <span class="row-sub">{opt(c, 'detail')}</span>}</th>
-                    <td>{'issuer' in c ? c.issuer : <span class="muted">—</span>}</td>
-                    <td><span class={`st st-cert-${c.status}`}>{certStatus[c.status]}</span></td>
-                  </tr>
-                ))
-              }
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+    </footer>
   </div>
 </FinanceLayout>
 
 <script>
+  import '../../scripts/bot-tiles';
   import '../../scripts/finance-live';
 </script>

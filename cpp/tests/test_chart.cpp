@@ -188,6 +188,22 @@ TEST(chart_y_axis_has_exactly_five_ticks_and_x_axis_three_labels) {
       CHECK_EQ(count(svg, "text-anchor=\"end\">"), size_t(6));  // five y tick labels and the last day on the x axis
       CHECK_EQ(count(svg, "text-anchor=\"start\">"), size_t(1));
       CHECK_EQ(count(svg, "text-anchor=\"middle\">"), size_t(1));
+
+      // The five y labels are all different (a step of 2.5 must print 97.5, 100, 102.5 and not round to repeats)
+      // and the gap between consecutive values is constant.
+      std::vector<double> values;
+      for (size_t at = svg.find("class=\"fcz-tick\""); at != std::string::npos && values.size() < 5;
+           at = svg.find("class=\"fcz-tick\"", at + 1)) {
+        size_t open = svg.find('>', at), close = svg.find('<', open);
+        values.push_back(std::stod(svg.substr(open + 1, close - open - 1)));
+      }
+      CHECK_EQ(values.size(), size_t(5));
+      if (values.size() == 5) {
+        std::sort(values.begin(), values.end());
+        double gap = values[1] - values[0];
+        CHECK(gap > 0);
+        for (size_t k = 2; k < 5; ++k) CHECK(std::fabs((values[k] - values[k - 1]) - gap) < 1e-6);
+      }
     }
   }
 }

@@ -83,7 +83,7 @@ double axisStep(double lo, double hi) {
 
 // Decimals needed to print a multiple of the step exactly.
 int tickDecimals(double step) {
-  if (step >= 1.0 - 1e-9) return 0;
+  if (std::fabs(step - std::round(step)) < 1e-9) return 0;
   return std::fabs(step * 10.0 - std::round(step * 10.0)) < 1e-9 ? 1 : 2;
 }
 
