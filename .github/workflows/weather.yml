@@ -41,7 +41,7 @@ jobs:
             exit 0
           fi
           git config user.name "Franco Caccia"
-          git config user.email "${{ github.repository_owner }}@users.noreply.github.com"
+          git config user.email "Francocaccia1804@gmail.com"
           git add src/data/weather.json
           git commit -m "Weather snapshot: latest METARs for SABE and KABE"
           git push
