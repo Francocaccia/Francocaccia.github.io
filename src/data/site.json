@@ -197,6 +197,7 @@
     "statsPath": "/stats",
     "historyPath": "/stats/history",
     "historyLive": false,
+    "benchmarks": ["SPY", "60/40 (SPY/AGG)"],
     "timeoutMs": 75000,
     "policyBands": [
       { "label": "Equities", "min": 40, "max": 75 },

@@ -158,6 +158,7 @@ void checkBot(Checker& c, const Json& bot) {
   c.need(bot, "bot", "statsPath", Json::Type::String);
   c.need(bot, "bot", "historyPath", Json::Type::String);
   c.need(bot, "bot", "historyLive", Json::Type::Bool);
+  c.need(bot, "bot", "benchmarks", Json::Type::Array);
   const Json* timeout = c.need(bot, "bot", "timeoutMs", Json::Type::Number);
   if (timeout && (timeout->asNumber() < 1000 || timeout->asNumber() > 300000)) {
     c.error("bot.timeoutMs", "must be between 1000 and 300000");

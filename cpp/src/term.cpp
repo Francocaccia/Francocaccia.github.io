@@ -6,6 +6,7 @@
 #include <functional>
 #include <map>
 
+#include "fc/chart.hpp"
 #include "fc/stats.hpp"
 #include "fc/weather.hpp"
 
@@ -201,6 +202,10 @@ bool resolve(const Path& cwd, const std::string& arg, Path& out) {
     out = cwd;
     return true;
   }
+  if (arg == "/") {  // the root of this little filesystem is the home folder
+    out.clear();
+    return true;
+  }
   if (arg == "~" || arg.rfind("~/", 0) == 0) {
     base.clear();
     rest = arg.substr(1);
@@ -281,7 +286,7 @@ std::string skillsText(const Site& s) {
   return t;
 }
 
-std::string certsText(const Site& s) {
+std::string licensesText(const Site& s) {
   std::string t = "# Licenses and certifications\n\n";
   for (const Json& c : s.j.at("certifications").items()) {
     std::string status = str(c, "status");
@@ -344,16 +349,72 @@ std::string educationText(const Site& s) {
 
 std::string projectSlug(const Json& p) { return str(p, "id"); }
 
+std::string experienceSlug(const Json& e) {
+  std::string id = str(e, "id");
+  return id.rfind("exp-", 0) == 0 ? id.substr(4) : id;
+}
+
+// The whole portfolio in one file, for people who would rather read than explore.
+std::string readmeText(const Site& s) {
+  std::string t = "# " + s.name() + "\n" + str(s.j, "location") + "\n\n" + str(s.j, "positioning") + "\n" + str(s.j, "openTo") + "\n\n";
+  t += "GitHub: " + s.github() + "\nLinkedIn: " + s.linkedin() + "\n";
+  t += "Email: " + (s.email().empty() ? std::string("[TODO: email]") : s.email()) + "\n\n";
+  t += "## Projects\n";
+  for (const Json& p : s.j.at("projects").items()) {
+    t += "- " + str(p, "name") + " [" + str(p, "tag") + "], " + str(p, "statusLabel");
+    if (!str(p, "period").empty()) t += ", " + str(p, "period");
+    t += ". " + str(p, "summary") + "\n";
+  }
+  t += "\n## Experience\n";
+  for (const Json& e : s.j.at("experience").items()) {
+    t += "- " + str(e, "role") + ", " + str(e, "org") + " (" + str(e, "start") + " to " + str(e, "end") + "). " + str(e, "description") + "\n";
+  }
+  t += "\n## Education\n";
+  for (const Json& e : s.j.at("education").items()) t += "- " + str(e, "degree") + ", " + str(e, "school") + " (" + orTodo(str(e, "period"), "years") + ")\n";
+  t += "\n## Licenses and certifications\n";
+  for (const Json& c : s.j.at("certifications").items()) {
+    std::string status = str(c, "status");
+    if (status == "in-progress") status = "in progress";
+    t += "- " + str(c, "name") + (str(c, "issuer").empty() ? "" : " (" + str(c, "issuer") + ")") + ": " + status +
+         (str(c, "detail").empty() ? "" : ", " + str(c, "detail")) + "\n";
+  }
+  t += "\n## Languages\n" + s.languagesLine() + "\n\n" + str(s.j, "footer") + "\n";
+  return t;
+}
+
+// The bot's published settings. Percentages and rules only: no positions, no amounts.
+std::string botJsonText(const Site& s) {
+  const Json& bot = s.j.at("bot");
+  Json o = Json::object();
+  o.set("project", s.j.at("projects").at(std::size_t(0)).at("name").asString());
+  o.set("mode", "paper trading only");
+  o.set("tracking_since", bot.at("trackingSince").asString());
+  o.set("benchmarks", bot.at("benchmarks"));
+  Json bands = Json::array();
+  for (const Json& b : bot.at("policyBands").items()) {
+    Json band = Json::object();
+    band.set("asset_class", b.at("label").asString()).set("min_pct", b.at("min")).set("max_pct", b.at("max"));
+    bands.push(std::move(band));
+  }
+  o.set("policy_bands", std::move(bands));
+  o.set("risk_controls", bot.at("riskControls"));
+  o.set("history_feed_live", bot.at("historyLive").asBool(false));
+  o.set("note", str(s.j, "footer"));
+  return o.dump(2) + "\n";
+}
+
 Node buildTree(const Site& s) {
   Node root = makeDir("~");
+  root.children.push_back(makeFile("README.md", readmeText(s)));
   root.children.push_back(makeFile("about.md", aboutText(s)));
   root.children.push_back(makeFile("skills.txt", skillsText(s)));
-  root.children.push_back(makeFile("certs.txt", certsText(s)));
+  root.children.push_back(makeFile("licenses.md", licensesText(s)));
   root.children.push_back(makeFile("contact.txt", contactText(s)));
+  root.children.push_back(makeFile("bot.json", botJsonText(s)));
 
   Node resume;
   resume.kind = Node::Kind::Link;
-  resume.name = "resume";
+  resume.name = "resume.pdf";
   resume.href = s.resume();
   resume.content = s.resume().empty() ? "[TODO: resume]" : "Resume";
   root.children.push_back(resume);
@@ -367,9 +428,7 @@ Node buildTree(const Site& s) {
 
   Node experience = makeDir("experience");
   for (const Json& e : s.j.at("experience").items()) {
-    std::string id = str(e, "id");
-    if (id.rfind("exp-", 0) == 0) id = id.substr(4);
-    experience.children.push_back(makeFile(id + ".md", roleText(e)));
+    experience.children.push_back(makeFile(experienceSlug(e) + ".md", roleText(e)));
   }
   experience.children.push_back(makeFile("education.md", educationText(s)));
   root.children.push_back(experience);
@@ -390,6 +449,90 @@ void collectFiles(const Node& n, const Path& at, std::vector<std::pair<std::stri
   }
 }
 
+// Every file and folder with its path, for matching names the visitor only partly typed.
+void collectAll(const Node& n, const Path& at, std::vector<std::pair<Path, const Node*>>& out) {
+  for (const Node& c : n.children) {
+    Path p = at;
+    p.push_back(c.name);
+    out.push_back({p, &c});
+    if (c.kind == Node::Kind::Dir) collectAll(c, p, out);
+  }
+}
+
+struct Loose {
+  bool found = false;
+  bool fuzzy = false;                  // true when a partly typed name was completed
+  Path path;
+  std::vector<std::string> ambiguous;  // display paths, when several names match
+};
+
+// Exact path first. Otherwise each part of the path may be a unique prefix ("cat auto" finds
+// projects/autotradingbot.md), and a bare name may match a unique file or folder anywhere.
+Loose resolveLoose(const Node& root, const Path& cwd, const std::string& arg) {
+  Loose r;
+  Path exact;
+  if (resolve(cwd, arg, exact) && nodeAt(root, exact)) {
+    r.found = true;
+    r.path = exact;
+    return r;
+  }
+  if (arg.empty() || arg[0] == '/' || arg[0] == '~') return r;
+
+  Path wanted;
+  if (!resolve(cwd, arg, wanted)) return r;
+  const Node* n = &root;
+  Path walked;
+  bool ok = true;
+  for (const std::string& seg : wanted) {
+    const Node* next = n->kind == Node::Kind::Dir ? child(*n, seg) : nullptr;
+    if (!next && n->kind == Node::Kind::Dir) {
+      std::vector<const Node*> matches;
+      for (const Node& c : n->children) {
+        if (lower(c.name).rfind(lower(seg), 0) == 0) matches.push_back(&c);
+      }
+      if (matches.size() == 1) {
+        next = matches[0];
+      } else if (matches.size() > 1) {
+        for (const Node* m : matches) {
+          Path p = walked;
+          p.push_back(m->name);
+          r.ambiguous.push_back(display(p));
+        }
+        return r;
+      }
+    }
+    if (!next) {
+      ok = false;
+      break;
+    }
+    walked.push_back(next->name);
+    n = next;
+  }
+  if (ok) {
+    r.found = true;
+    r.fuzzy = true;
+    r.path = walked;
+    return r;
+  }
+
+  if (arg.find('/') == std::string::npos) {
+    std::vector<std::pair<Path, const Node*>> all;
+    collectAll(root, {}, all);
+    std::vector<std::pair<Path, const Node*>> matches;
+    for (const auto& item : all) {
+      if (lower(item.second->name).rfind(lower(arg), 0) == 0) matches.push_back(item);
+    }
+    if (matches.size() == 1) {
+      r.found = true;
+      r.fuzzy = true;
+      r.path = matches[0].first;
+    } else {
+      for (const auto& m : matches) r.ambiguous.push_back(display(m.first));
+    }
+  }
+  return r;
+}
+
 // -------------------------------------------------------------------- commands
 
 struct CommandInfo {
@@ -406,14 +549,18 @@ const CommandInfo kCommands[] = {
     {"pwd", "Look around", "pwd", "Show which folder you are in.", "pwd"},
     {"cat", "Look around", "cat <file>", "Read a file.", "cat about.md"},
     {"tree", "Look around", "tree [folder]", "Show every file at a glance.", "tree"},
-    {"grep", "Look around", "grep <text>", "Search every file for a word or phrase.", "grep python"},
+    {"grep", "Look around", "grep [-i] <text> [file]", "Search every file (or one) for a word. -i ignores capitals.", "grep -i python"},
     {"whoami", "About me", "whoami", "One line about me.", "whoami"},
     {"neofetch", "About me", "neofetch", "A quick facts card.", "neofetch"},
     {"projects", "About me", "projects", "List my projects.", "projects"},
-    {"stats", "About me", "stats", "Live status of the trading bot (percentages only).", "stats"},
+    {"experience", "About me", "experience", "Where I have worked.", "experience"},
+    {"skills", "About me", "skills", "The tools and languages I use.", "skills"},
+    {"licenses", "About me", "licenses", "Pilot licenses and certificates.", "licenses"},
+    {"contact", "About me", "contact", "How to reach me.", "contact"},
+    {"stats", "About me", "stats", "Status of the trading bot (percentages only).", "stats"},
     {"open", "Go somewhere", "open <github|linkedin|resume|project>", "Print a clickable link.", "open github"},
     {"mode", "Go somewhere", "mode <finance|aviation>", "Switch to another view of this site.", "mode finance"},
-    {"metar", "Go somewhere", "metar <sabe|kabe>", "Decode the weather report for an airport.", "metar kabe"},
+    {"metar", "Go somewhere", "metar <icao>", "Decode a weather report (try kabe or sabe).", "metar kabe"},
     {"exit", "Go somewhere", "exit", "Go back to the gateway.", "exit"},
     {"history", "Other", "history", "Show the commands you have run.", "history"},
     {"clear", "Other", "clear", "Clear the screen.", "clear"},
@@ -512,6 +659,20 @@ void listDir(Ctx& c, const Node& dir, const Path& at) {
   if (!row.empty()) c.out.add(row);
 }
 
+// Explains a name that did not resolve: either several names match, or none do.
+void reportMissing(Ctx& c, const std::string& command, const std::string& arg, const Loose& r, const std::string& noun) {
+  if (!r.ambiguous.empty()) {
+    c.out.error(command + ": '" + arg + "' matches more than one name. Which one?");
+    for (const std::string& p : r.ambiguous) c.out.add({S("  "), CMD(p, command + " " + p)});
+    return;
+  }
+  c.out.error(command + ": no such " + noun + " '" + arg + "'. Try: ls");
+}
+
+void noteResolved(Ctx& c, const Loose& r) {
+  if (r.fuzzy) c.out.text("(opening " + display(r.path) + ")", "dim");
+}
+
 void cmdLs(Ctx& c, const std::vector<std::string>& a) {
   std::vector<std::string> targets;
   for (const std::string& x : a) {
@@ -519,12 +680,14 @@ void cmdLs(Ctx& c, const std::vector<std::string>& a) {
   }
   if (targets.empty()) targets.push_back("");
   for (std::size_t i = 0; i < targets.size(); ++i) {
-    Path p;
-    const Node* n = resolve(c.cwd, targets[i], p) ? nodeAt(c.root, p) : nullptr;
-    if (!n) {
-      c.out.error("ls: cannot find '" + targets[i] + "'. Try: ls");
+    Loose r = resolveLoose(c.root, c.cwd, targets[i]);
+    if (!r.found) {
+      reportMissing(c, "ls", targets[i], r, "file or folder");
       continue;
     }
+    Path p = r.path;
+    const Node* n = nodeAt(c.root, p);
+    noteResolved(c, r);
     if (targets.size() > 1) c.out.text(targets[i] + ":", "dim");
     if (n->kind == Node::Kind::Dir) {
       listDir(c, *n, p);
@@ -544,11 +707,13 @@ void cmdCd(Ctx& c, const std::vector<std::string>& a) {
     c.out.error("cd: '" + arg + "' is outside this site. Try: cd ~");
     return;
   }
-  const Node* n = nodeAt(c.root, p);
-  if (!n) {
-    c.out.error("cd: no such folder '" + arg + "'. Try: ls");
+  Loose r = resolveLoose(c.root, c.cwd, arg);
+  if (!r.found) {
+    reportMissing(c, "cd", arg, r, "folder");
     return;
   }
+  p = r.path;
+  const Node* n = nodeAt(c.root, p);
   if (n->kind != Node::Kind::Dir) {
     c.out.error("cd: '" + arg + "' is a file, not a folder.");
     c.out.add({S("Read it with: ", "dim"), CMD("cat " + arg)});
@@ -562,7 +727,27 @@ void cmdPwd(Ctx& c, const std::vector<std::string>&) {
   c.out.text(std::string(kHome) + (c.cwd.empty() ? "" : "/" + join(c.cwd, "/")));
 }
 
-void printFile(Ctx& c, const Node& n, const Path& p) {
+// Prints text the way `cat` does: "# " lines are headings, URLs become links.
+void printContent(Ctx& c, const std::string& content) {
+  std::string cur;
+  for (std::size_t i = 0; i <= content.size(); ++i) {
+    if (i == content.size() || content[i] == '\n') {
+      if (i == content.size() && cur.empty()) break;
+      if (cur.rfind("# ", 0) == 0) {
+        c.out.text(cur.substr(2), "accent");
+      } else if (cur.rfind("## ", 0) == 0) {
+        c.out.text(cur.substr(3), "head");
+      } else {
+        c.out.add(linkify(cur));
+      }
+      cur.clear();
+    } else {
+      cur += content[i];
+    }
+  }
+}
+
+void printFile(Ctx& c, const Node& n) {
   if (n.kind == Node::Kind::Link) {
     if (n.href.empty()) {
       c.out.text(n.content, "dim");
@@ -571,80 +756,94 @@ void printFile(Ctx& c, const Node& n, const Path& p) {
     }
     return;
   }
-  (void)p;
-  std::string cur;
-  for (std::size_t i = 0; i <= n.content.size(); ++i) {
-    if (i == n.content.size() || n.content[i] == '\n') {
-      if (i == n.content.size() && cur.empty()) break;
-      if (cur.rfind("# ", 0) == 0) {
-        c.out.text(cur.substr(2), "accent");
-      } else {
-        c.out.add(linkify(cur));
-      }
-      cur.clear();
-    } else {
-      cur += n.content[i];
-    }
-  }
+  printContent(c, n.content);
 }
 
 void cmdCat(Ctx& c, const std::vector<std::string>& a) {
   if (a.empty()) return usage(c, "cat");
   for (std::size_t i = 0; i < a.size(); ++i) {
-    Path p;
-    const Node* n = resolve(c.cwd, a[i], p) ? nodeAt(c.root, p) : nullptr;
-    if (!n) {
-      c.out.error("cat: no such file '" + a[i] + "'. Try: ls");
+    Loose r = resolveLoose(c.root, c.cwd, a[i]);
+    if (!r.found) {
+      reportMissing(c, "cat", a[i], r, "file");
       continue;
     }
+    const Node* n = nodeAt(c.root, r.path);
     if (n->kind == Node::Kind::Dir) {
       c.out.error("cat: '" + a[i] + "' is a folder, not a file.");
-      c.out.add({S("List it with: ", "dim"), CMD("ls " + a[i])});
+      c.out.add({S("List it with: ", "dim"), CMD("ls " + display(r.path))});
       continue;
     }
     if (a.size() > 1) c.out.text("--- " + a[i], "dim");
-    printFile(c, *n, p);
+    noteResolved(c, r);
+    printFile(c, *n);
   }
 }
 
-void drawTree(const Node& dir, const std::string& prefix, std::vector<Line>& lines) {
+void drawTree(const Node& dir, const Path& at, const std::string& prefix, std::vector<Line>& lines) {
   for (std::size_t i = 0; i < dir.children.size(); ++i) {
     const Node& n = dir.children[i];
     bool last = i + 1 == dir.children.size();
+    Path full = at;
+    full.push_back(n.name);
     std::string label = n.name + (n.kind == Node::Kind::Dir ? "/" : n.kind == Node::Kind::Link ? "@" : "");
-    lines.push_back({S(prefix + (last ? "`-- " : "|-- ")), S(label, n.kind == Node::Kind::Dir ? "accent" : "")});
-    if (n.kind == Node::Kind::Dir) drawTree(n, prefix + (last ? "    " : "|   "), lines);
+    lines.push_back({S(prefix + (last ? "`-- " : "|-- ")), CMD(label, (n.kind == Node::Kind::Dir ? "ls " : "cat ") + display(full))});
+    if (n.kind == Node::Kind::Dir) drawTree(n, full, prefix + (last ? "    " : "|   "), lines);
   }
 }
 
 void cmdTree(Ctx& c, const std::vector<std::string>& a) {
-  Path p;
   std::string arg = a.empty() ? "" : a[0];
-  const Node* n = resolve(c.cwd, arg, p) ? nodeAt(c.root, p) : nullptr;
+  Loose r = resolveLoose(c.root, c.cwd, arg);
+  const Node* n = r.found ? nodeAt(c.root, r.path) : nullptr;
   if (!n || n->kind != Node::Kind::Dir) {
     c.out.error("tree: no such folder '" + arg + "'.");
     return;
   }
-  c.out.text(display(p), "accent");
+  c.out.text(display(r.path), "accent");
   std::vector<Line> lines;
-  drawTree(*n, "", lines);
+  drawTree(*n, r.path, "", lines);
   for (Line& l : lines) c.out.add(std::move(l));
 }
 
-void cmdGrep(Ctx& c, const std::vector<std::string>& a) {
+void cmdGrep(Ctx& c, const std::vector<std::string>& args) {
+  // grep [-i] <text> [file]: -i ignores capitals; a last word that names a file or folder limits the search.
+  bool ignoreCase = false;
+  std::vector<std::string> a;
+  for (const std::string& x : args) {
+    if (x == "-i") ignoreCase = true;
+    else a.push_back(x);
+  }
   if (a.empty()) return usage(c, "grep");
-  std::string needle = lower(join(a, " "));
   std::vector<std::pair<std::string, const Node*>> files;
   collectFiles(c.root, {}, files);
+  if (a.size() >= 2) {
+    Loose r = resolveLoose(c.root, c.cwd, a.back());
+    if (r.found) {
+      const Node* target = nodeAt(c.root, r.path);
+      std::vector<std::pair<std::string, const Node*>> narrowed;
+      std::string where = display(r.path);
+      for (const auto& f : files) {
+        bool inside = target->kind == Node::Kind::Dir ? f.first.rfind(where + "/", 0) == 0 : f.first == where;
+        if (inside) narrowed.push_back(f);
+      }
+      files = narrowed;
+      a.pop_back();
+    }
+  }
+  std::string text = join(a, " ");
+  std::string needle = ignoreCase ? lower(text) : text;
   constexpr std::size_t kMaxHits = 30;
-  std::size_t hits = 0, filesHit = 0;
+  std::size_t hits = 0, filesHit = 0, otherCase = 0;
   for (const auto& f : files) {
     bool any = false;
     std::size_t lineNo = 0;
     for (const std::string& line : split(f.second->content, '\n')) {
       ++lineNo;
-      std::size_t pos = lower(line).find(needle);
-      if (pos == std::string::npos) continue;
+      std::size_t pos = (ignoreCase ? lower(line) : line).find(needle);
+      if (pos == std::string::npos) {
+        if (!ignoreCase && lower(line).find(lower(text)) != std::string::npos) ++otherCase;
+        continue;
+      }
       if (!any) ++filesHit;
       any = true;
       if (++hits > kMaxHits) continue;
@@ -660,7 +859,9 @@ void cmdGrep(Ctx& c, const std::vector<std::string>& a) {
     }
   }
   if (hits == 0) {
-    c.out.text("No matches for '" + join(a, " ") + "'. Try a shorter word, for example: grep go", "dim");
+    c.out.text("No matches for '" + text + "'.", "dim");
+    if (otherCase > 0) c.out.add({S("It does appear with other capitals. Try: ", "dim"), CMD("grep -i " + text)});
+    else c.out.text("Try a shorter word, for example: grep -i go", "dim");
     return;
   }
   std::string summary = std::to_string(hits) + (hits == 1 ? " match" : " matches") + " in " + std::to_string(filesHit) +
@@ -711,6 +912,48 @@ void cmdProjects(Ctx& c, const std::vector<std::string>&) {
   }
   c.out.blank();
   c.out.add({S("Click a name to read it, or type: ", "dim"), CMD("cat projects/autotradingbot.md")});
+}
+
+void cmdExperience(Ctx& c, const std::vector<std::string>&) {
+  Site s = c.s();
+  bool first = true;
+  for (const Json& e : s.j.at("experience").items()) {
+    if (!first) c.out.blank();
+    first = false;
+    std::string where = str(e, "place").empty() ? "" : ", " + str(e, "place");
+    c.out.add({S(pad(str(e, "tag"), 6), "accent"), CMD(str(e, "role"), "cat ~/experience/" + experienceSlug(e) + ".md")});
+    c.out.add({S("      "), S(str(e, "org") + where, "head")});
+    c.out.add({S("      "), S(str(e, "start") + " to " + str(e, "end"), "dim")});
+    c.out.add({S("      "), S(str(e, "description"))});
+  }
+}
+
+void cmdSkills(Ctx& c, const std::vector<std::string>&) {
+  Site s = c.s();
+  printContent(c, skillsText(s));
+}
+
+void cmdLicenses(Ctx& c, const std::vector<std::string>&) {
+  Site s = c.s();
+  for (const Json& cert : s.j.at("certifications").items()) {
+    std::string status = str(cert, "status");
+    bool done = status == "active" || status == "complete";
+    if (status == "in-progress") status = "in progress";
+    std::string rest = str(cert, "name");
+    if (!str(cert, "issuer").empty()) rest += " (" + str(cert, "issuer") + ")";
+    c.out.add({S(pad("[" + status + "]", 14), done ? "pos" : "dim"), S(rest)});
+    if (!str(cert, "detail").empty()) c.out.add({S("              "), S(str(cert, "detail"), "dim")});
+  }
+}
+
+void cmdContact(Ctx& c, const std::vector<std::string>&) {
+  Site s = c.s();
+  c.out.add({S(pad("GitHub", 10), "dim"), LINK(s.github(), s.github())});
+  c.out.add({S(pad("LinkedIn", 10), "dim"), LINK(s.linkedin(), s.linkedin())});
+  if (s.email().empty()) c.out.add({S(pad("Email", 10), "dim"), S("[TODO: email]")});
+  else c.out.add({S(pad("Email", 10), "dim"), LINK(s.email(), "mailto:" + s.email())});
+  if (s.resume().empty()) c.out.add({S(pad("Resume", 10), "dim"), S("[TODO: resume]")});
+  else c.out.add({S(pad("Resume", 10), "dim"), LINK(s.resume(), s.resume())});
 }
 
 void cmdStats(Ctx& c, const std::vector<std::string>&) {
@@ -798,6 +1041,11 @@ void cmdMode(Ctx& c, const std::vector<std::string>& a) {
   c.out.action("remember", "mode", m);
 }
 
+std::string upperCopy(std::string s) {
+  std::transform(s.begin(), s.end(), s.begin(), [](unsigned char ch) { return static_cast<char>(std::toupper(ch)); });
+  return s;
+}
+
 // "2026-10-18T15:00:00.000Z" -> "2026-10-18 15:00 UTC"
 std::string utcStamp(const std::string& iso) {
   if (iso.size() >= 16 && iso[10] == 'T') return iso.substr(0, 10) + " " + iso.substr(11, 5) + " UTC";
@@ -806,16 +1054,22 @@ std::string utcStamp(const std::string& iso) {
 
 void cmdMetar(Ctx& c, const std::vector<std::string>& a) {
   if (a.empty()) return usage(c, "metar");
-  std::string st = lower(a[0]);
-  if (st != "sabe" && st != "kabe") {
-    c.out.error("metar: pick sabe (Buenos Aires) or kabe (Lehigh Valley).");
-    return;
-  }
-  auto found = c.options.metars.find(st == "sabe" ? "SABE" : "KABE");
+  std::string st = upperCopy(a[0]);
   bool aviation = std::find(c.options.modes.begin(), c.options.modes.end(), "aviation") != c.options.modes.end();
-  if (found == c.options.metars.end()) {
+  if (c.options.metars.empty()) {
     c.out.text("METAR decoding is coming soon. It will live in the Aviation view.", "dim");
     if (aviation) c.out.add({S("Take a look: ", "dim"), CMD("mode aviation")});
+    return;
+  }
+  auto found = c.options.metars.find(st);
+  if (found == c.options.metars.end()) {
+    c.out.error("metar: I only have reports for these airports:");
+    Line row = {S("  ")};
+    for (const auto& m : c.options.metars) {
+      row.push_back(CMD(lower(m.first), "metar " + lower(m.first)));
+      row.push_back(S("  "));
+    }
+    c.out.add(row);
     return;
   }
   Json d = decodeMetar(found->second.raw, utcStamp(found->second.observedAt));
@@ -824,8 +1078,8 @@ void cmdMetar(Ctx& c, const std::vector<std::string>& a) {
     return;
   }
   c.out.add({S(found->second.raw, "accent")});
-  c.out.add({S("Observed " + utcStamp(found->second.observedAt), "dim"),
-             S(found->second.sample ? "  (sample data, not a live report)" : "", "dim")});
+  c.out.add({S(found->second.observedAt.empty() ? "Format demo" : "Observed " + utcStamp(found->second.observedAt), "dim"),
+             S(found->second.sample ? "  (sample data, not a live report)" : "", "warn")});
   c.out.blank();
   c.out.add({S(pad("Category", 13), "dim"), S(d.at("category").asString(), "accent"), S("  " + d.at("categoryWhy").asString())});
   static const char* const wanted[] = {"Wind (true direction)", "Visibility", "Weather", "Clouds", "Temperature",
@@ -913,6 +1167,7 @@ const std::map<std::string, Handler>& handlers() {
       {"help", cmdHelp},     {"ls", cmdLs},         {"cd", cmdCd},         {"pwd", cmdPwd},   {"cat", cmdCat},
       {"tree", cmdTree},     {"grep", cmdGrep},     {"whoami", cmdWhoami}, {"neofetch", cmdNeofetch},
       {"projects", cmdProjects}, {"stats", cmdStats}, {"open", cmdOpen},   {"mode", cmdMode}, {"metar", cmdMetar},
+      {"experience", cmdExperience}, {"skills", cmdSkills}, {"licenses", cmdLicenses}, {"contact", cmdContact},
       {"sudo", cmdSudo},     {"history", cmdHistory}, {"echo", cmdEcho},   {"clear", cmdClear}, {"date", cmdDate},
       {"exit", cmdExit},
   };
@@ -1047,7 +1302,9 @@ Json Term::complete(const std::string& line, const std::string& cwd) const {
     } else if (cmd == "mode") {
       words(impl_->options.modes);
     } else if (cmd == "metar") {
-      words({"sabe", "kabe"});
+      std::vector<std::string> stations;
+      for (const auto& m : impl_->options.metars) stations.push_back(lower(m.first));
+      words(stations);
     } else if (cmd == "sudo") {
       words({"hire"});
     } else if (cmd == "hire") {
@@ -1086,24 +1343,76 @@ Json Term::complete(const std::string& line, const std::string& cwd) const {
   return out;
 }
 
-Json Term::statsOutput(const Json& raw, const std::string& trackingSince) const {
-  Out out;
-  if (!raw.isObject()) {
-    out.error("The bot did not answer.");
-    out.text("Its free host sleeps when idle and can take about a minute to wake. Try again in a moment.", "dim");
-  } else {
-    Json n = normalizeStats(raw, trackingSince);
-    out.text("AutoTradingBot, paper trading, since " + n.at("startDate").asString(), "accent");
-    for (const Json& t : n.at("tiles").items()) {
-      std::string tone = t.at("tone").asString();
-      out.add({S("  " + pad(t.at("label").asString(), 14), "dim"),
-               S(t.at("text").asString(), tone == "pos" ? "pos" : tone == "neg" ? "neg" : "")});
-    }
-    if (!n.at("note").asString().empty()) out.text(n.at("note").asString(), "dim");
-    out.text(std::string(n.at("asOf").asString().empty() ? "" : "Updated " + n.at("asOf").asString() + ". ") +
-                 "Percentages only. Paper trading, not investment advice.",
-             "dim");
+namespace {
+
+// A one-line ASCII sparkline of the daily closes (8 levels, at most `width` characters).
+std::string sparkline(const std::vector<Candle>& series, std::size_t width) {
+  static const char ramp[] = "_.-=+*#@";
+  if (series.empty()) return "";
+  std::vector<double> v;
+  for (std::size_t i = 0; i < std::min(width, series.size()); ++i) {
+    std::size_t at = series.size() <= width ? i : i * (series.size() - 1) / (width - 1);
+    v.push_back(series[at].c);
   }
+  double lo = *std::min_element(v.begin(), v.end()), hi = *std::max_element(v.begin(), v.end());
+  std::string out;
+  for (double x : v) {
+    int level = hi - lo < 1e-9 ? 3 : static_cast<int>(std::lround((x - lo) / (hi - lo) * 7.0));
+    out += ramp[std::max(0, std::min(7, level))];
+  }
+  return out;
+}
+
+constexpr std::size_t kStatsBlockLines = 12;
+
+// The bot's status block. With `placeholder` (or when the feed failed) the numbers read [+x.x%].
+Out statsBlock(const Json& raw, bool placeholder, const std::string& trackingSince, const Json& history, bool padToBlock) {
+  Out out;
+  bool live = !placeholder && raw.isObject();
+  Json n = normalizeStats(live ? raw : Json::object(), trackingSince);
+  out.text("AutoTradingBot, paper trading, since " + n.at("startDate").asString(), "accent");
+  for (const Json& t : n.at("tiles").items()) {
+    bool hasValue = live && t.at("value").isNumber();
+    std::string tone = t.at("tone").asString();
+    out.add({S("  " + pad(t.at("label").asString(), 14), "dim"),
+             S(hasValue ? t.at("text").asString() : "[+x.x%]", hasValue ? (tone == "pos" ? "pos" : tone == "neg" ? "neg" : "") : "dim")});
+  }
+  if (placeholder) {
+    out.text("Waking up the bot. The free host can take about a minute.", "dim");
+  } else if (!raw.isObject()) {
+    out.text("The bot did not answer. Its free host sleeps when idle; try again in a moment.", "dim");
+  } else if (!n.at("note").asString().empty()) {
+    out.text(n.at("note").asString(), "dim");
+  } else {
+    out.blank();
+  }
+  out.text(std::string(live && !n.at("asOf").asString().empty() ? "Updated " + n.at("asOf").asString() + ". " : "") +
+               "Percentages only. Paper trading, not investment advice.",
+           "dim");
+
+  std::vector<Candle> series;
+  std::string err;
+  bool liveSeries = history.isArray() && parseHistory(history, series, err);
+  if (!liveSeries) series = illustrativeSeries(7, 30);
+  out.add({S("  "), S(sparkline(series, 30), "accent")});
+  out.text(liveSeries ? "Bot close by day, since " + series.front().label + ", indexed to 100."
+                      : "Illustrative data, not real results. The real history appears once the bot publishes it.",
+           liveSeries ? "dim" : "warn");
+  while (padToBlock && out.lines.size() < kStatsBlockLines) out.blank();
+  return out;
+}
+
+}  // namespace
+
+Json Term::statsOutput(const Json& raw, const std::string& trackingSince, const Json& history, bool padToBlock) const {
+  Out out = statsBlock(raw, false, trackingSince, history, padToBlock);
+  Json res = Json::object();
+  res.set("lines", linesToJson(out.lines));
+  return res;
+}
+
+Json Term::statsPlaceholder(const std::string& trackingSince, bool padToBlock) const {
+  Out out = statsBlock(Json(), true, trackingSince, Json(), padToBlock);
   Json res = Json::object();
   res.set("lines", linesToJson(out.lines));
   return res;

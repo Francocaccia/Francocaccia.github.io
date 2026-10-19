@@ -24,6 +24,8 @@ async function start(root: HTMLElement) {
   const {
     apiBase = '',
     statsPath = '',
+    historyPath = '',
+    historyLive = 'false',
     trackingSince = '',
     modes = '',
   } = root.dataset;
@@ -42,7 +44,7 @@ async function start(root: HTMLElement) {
   });
 
   let cwd = '~';
-  const history: string[] = ['cat about.md']; // the first screen already ran this
+  const history: string[] = ['projects', 'stats', 'experience']; // the first screen already ran these
   let historyIndex = history.length;
   let draft = '';
   let pending: AbortController | null = null;
@@ -84,27 +86,45 @@ async function start(root: HTMLElement) {
     screen.append(row);
   }
 
+  // The bot's public feeds. A failed or empty request gives null, never an exception.
+  async function fetchBot(signal: AbortSignal): Promise<{ raw: unknown; history: unknown }> {
+    const get = async (path: string): Promise<unknown> => {
+      try {
+        const response = await fetch(`${apiBase}${path}`, { headers: { Accept: 'application/json' }, signal });
+        return response.ok ? await response.json() : null;
+      } catch {
+        return null;
+      }
+    };
+    // The history feed is only requested once the bot publishes it (bot.historyLive in the data file).
+    const [raw, history] = await Promise.all([get(statsPath), historyLive === 'true' ? get(historyPath) : Promise.resolve(null)]);
+    return { raw, history };
+  }
+
   async function fetchStats() {
     pending = new AbortController();
     userAborted = false;
     const timer = setTimeout(() => pending?.abort(), timeoutMs);
-    let raw: unknown = null;
-    try {
-      const response = await fetch(`${apiBase}${statsPath}`, {
-        headers: { Accept: 'application/json' },
-        signal: pending.signal,
-      });
-      if (response.ok) raw = await response.json();
-    } catch {
-      raw = null;
-    } finally {
-      clearTimeout(timer);
-    }
+    const { raw, history } = await fetchBot(pending.signal);
+    clearTimeout(timer);
     const aborted = userAborted;
     pending = null;
     if (aborted) return printText('Cancelled.', 'dim');
-    const reply = await coreCall<{ lines: TermLine[] }>('term.stats', { stats: raw, trackingSince });
+    const reply = await coreCall<{ lines: TermLine[] }>('term.stats', { stats: raw, trackingSince, history });
     print(reply.lines);
+  }
+
+  // The first screen shows the stats block with placeholders. Swap in the real numbers without
+  // changing its size, so nothing on the page moves.
+  async function refreshStatsBlock() {
+    const block = root.querySelector<HTMLElement>('[data-stats-block]');
+    if (!block) return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const { raw, history } = await fetchBot(controller.signal);
+    clearTimeout(timer);
+    const reply = await coreCall<{ lines: TermLine[] }>('term.stats', { stats: raw, trackingSince, history, pad: true });
+    block.replaceChildren(renderLines(reply.lines));
   }
 
   function remember(mode: string) {
@@ -267,6 +287,6 @@ async function start(root: HTMLElement) {
   input.disabled = false;
   root.dataset.ready = '';
   setCwd('~');
-  scrollToEnd();
   if (fineCursor) input.focus({ preventScroll: true });
+  void refreshStatsBlock();
 }

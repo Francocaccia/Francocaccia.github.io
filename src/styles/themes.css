@@ -18,26 +18,34 @@
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
+/* Finance: "annual letter". Near-black green, coral accent, serif display. */
 :root[data-theme='finance'] {
-  --bg: #07111f;
-  --bg-raised: #0d1b30;
-  --bg-hover: #14274a;
-  --bar-bg: #07111f;
-  --fg: #e4ecf7;
-  --fg-muted: #8da2bd;
-  --accent: #34d57a;
-  --positive: #34d57a;
-  --negative: #ff6b6b;
-  --line: #172a45;
-  --line-strong: #2a4468;
-  --link: #6fb7ff;
-  --link-hover: #a8d3ff;
-  --focus: #ffd166;
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  color-scheme: dark;
+  --bg: #0d1210;
+  --bg-raised: #101713;
+  --bg-hover: #16201a;
+  --bar-bg: #0d1210;
+  --fg: #edefe8;
+  --fg-body: #d4d9d1;
+  --fg-muted: #a3aba2;
+  --line: #2a332e;
+  --line-strong: #3a453f;
+  --grid: #1b2420;
+  --accent: #ff8a66;
+  --spy: #8fb7e8;
+  --mix: #7e8a82;
+  --note: #f2b66b;
+  --link: #ff8a66;
+  --link-hover: #ffb8a3;
+  --focus: #f2b66b;
+  --font-body: 'Instrument Sans', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --font-display: 'Instrument Serif', Georgia, serif;
 }
 
+/* Terminal: amber phosphor on black. Clickable text is green. */
 :root[data-theme='terminal'] {
+  color-scheme: dark;
   --bg: #000;
   --bg-raised: #0c0a07;
   --bg-hover: #1a1409;
@@ -45,6 +53,10 @@
   --fg: #ff9a1f;
   --fg-muted: #b87a30;
   --accent: #ffb347;
+  --t-head: #ffc266;
+  --t-input: #ffd9a0;
+  --t-cmd: #6ee787;
+  --t-error: #ff7a59;
   --line: #2a1d0a;
   --line-strong: #5a3a0f;
   --link: #ffc266;
@@ -52,23 +64,29 @@
   --focus: #ffffff;
   --font-body: 'JetBrains Mono', ui-monospace, monospace;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'VT323', 'JetBrains Mono', monospace;
 }
 
+/* Aviation: an ICAO flight plan form. Paper, ink and a red stamp; light, unlike the other modes. */
 :root[data-theme='aviation'] {
-  --bg: #0a0c0d;
-  --bg-raised: #121618;
-  --bg-hover: #1b2124;
-  --bar-bg: #0a0c0d;
-  --fg: #e6ebe8;
-  --fg-muted: #92a09a;
-  --accent: #ffb000;
-  --ok: #3fd16f;
-  --cyan: #3cc8e6;
-  --line: #1c2326;
-  --line-strong: #33403f;
-  --link: #4fd0ea;
-  --link-hover: #9be6f5;
-  --focus: #ffb000;
+  color-scheme: light;
+  --bg: #d9dde3;
+  --bg-raised: #fbfaf4; /* the paper */
+  --bg-hover: #efede0;  /* section band */
+  --bar-bg: #d9dde3;
+  --fg: #1f2a3c;
+  --fg-muted: #33415a;
+  --ink: #0b2a5b;       /* typed entries */
+  --red: #b3261e;       /* item numbers, stamp, project codes */
+  --warn: #8a4b00;
+  --placeholder: #5b6678;
+  --frame: #111111;
+  --accent: #0b2a5b;
+  --line: #b9c0cc;
+  --line-strong: #111111;
+  --link: #0b2a5b;
+  --link-hover: #b3261e;
+  --focus: #b3261e;
   --font-body: 'B612', system-ui, sans-serif;
   --font-mono: 'B612 Mono', ui-monospace, monospace;
 }

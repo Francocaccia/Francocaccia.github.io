@@ -24,7 +24,7 @@ const char* kValidSite = R"({
               "examples":[{"label":"l","raw":"KABE 181451Z 00000KT 10SM CLR 09/M01 A3062"}],
               "meetsCode":[{"habit":"h","inFlight":"a","inCode":"b"}]},
   "weather":{"KABE":{"raw":"KABE 1","observedAt":"2026-10-16T17:51:00Z","sample":true}},
-  "bot":{"trackingSince":"2026-10-13","apiBase":"https://x","statsPath":"/stats","historyPath":"/stats/history","historyLive":false,
+  "bot":{"trackingSince":"2026-10-13","apiBase":"https://x","statsPath":"/stats","historyPath":"/stats/history","historyLive":false,"benchmarks":["SPY"],
          "timeoutMs":75000,
          "policyBands":[{"label":"Equities","min":40,"max":75}],
          "riskControls":["Long-only."],

@@ -1,0 +1,42 @@
+---
+// The four performance tiles for the trading bot. Shared by the Finance and Aviation views.
+// Static HTML shows placeholders; src/scripts/bot-tiles.ts fills them in from the bot's public /stats.
+// Only four percentage fields are ever read (the C++ core whitelists them).
+import { site } from '../lib/site';
+
+interface Props {
+  /** Extra class for the wrapper, so each view can style the tiles itself. */
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+const bot = site.bot;
+const tiles = [
+  { id: 'return', label: 'Return' },
+  { id: 'vs_spy', label: 'vs SPY' },
+  { id: 'vs_6040', label: 'vs 60/40' },
+  { id: 'max_drawdown', label: 'Max drawdown' },
+];
+---
+
+<div
+  class={`bot-tiles ${className}`.trim()}
+  data-bot
+  data-api-base={bot.apiBase}
+  data-stats-path={bot.statsPath}
+  data-timeout={bot.timeoutMs}
+  data-tracking-since={bot.trackingSince}
+>
+  <dl class="bt-grid">
+    {
+      tiles.map((t) => (
+        <div class="bt-tile" data-tile={t.id} data-tone="none">
+          <dt>{t.label}</dt>
+          <dd data-value>[+x.x%]</dd>
+          <dd class="bt-cap" data-caption>placeholder until the feed answers</dd>
+        </div>
+      ))
+    }
+  </dl>
+  <p class="bt-note" data-tiles-note>Placeholders. The bot's public stats fill them in when they load.</p>
+</div>

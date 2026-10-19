@@ -1,9 +1,11 @@
 ---
 import '@fontsource/jetbrains-mono/latin-400.css';
 import '@fontsource/jetbrains-mono/latin-700.css';
+import '@fontsource/vt323/latin-400.css';
 import '../styles/terminal.css';
 import jbMono400 from '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2?url';
 import jbMono700 from '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-700-normal.woff2?url';
+import vt323 from '@fontsource/vt323/files/vt323-latin-400-normal.woff2?url';
 import Base from './Base.astro';
 
 interface Props {
@@ -14,6 +16,6 @@ interface Props {
 const { title, description } = Astro.props;
 ---
 
-<Base fonts={[jbMono400, jbMono700]} title={title} description={description} current="terminal" theme="terminal">
+<Base fonts={[vt323, jbMono400, jbMono700]} title={title} description={description} current="terminal" theme="terminal">
   <slot />
 </Base>

@@ -1,7 +1,7 @@
 ---
-// Terminal view: a real shell over a virtual filesystem generated from site.json.
-// The C++ engine runs at build time to pre-render the first screen (`cat about.md`) and the
-// <noscript> copy, and again in the browser (WebAssembly) for everything interactive.
+// Terminal view (design T1): an amber phosphor window with a real shell over a virtual filesystem
+// generated from site.json. The C++ engine pre-renders the first screen (projects, stats, experience)
+// and the <noscript> copy at build time, and runs again in the browser (WebAssembly) for everything else.
 import TerminalLayout from '../../layouts/TerminalLayout.astro';
 import TermLines from '../../components/TermLines.astro';
 import { site } from '../../lib/site';
@@ -9,39 +9,43 @@ import { coreCall } from '../../lib/core';
 import { enabledModes } from '../../config';
 import { stationWeather } from '../../lib/weather';
 
+type Lines = { t: string; k?: string; h?: string; c?: string }[][];
+
 const modes = enabledModes()
   .filter((m) => m.id !== 'terminal')
   .map((m) => m.id);
 
-// The newest report the page has for each airport (a snapshot, or a labeled sample).
-const metars = Object.fromEntries(
-  ['SABE', 'KABE'].map((icao) => {
-    const w = stationWeather(icao);
-    return [icao, { raw: w.raw, observedAt: w.observedAt, sample: w.sample }];
-  }),
-);
+// Reports `metar` can decode: the two airports on the route (latest snapshot) and the format-demo
+// examples from the Aviation view (labeled sample). One report per airport.
+const metars: Record<string, { raw: string; observedAt: string; sample: boolean }> = {};
+for (const icao of ['SABE', 'KABE']) {
+  const w = stationWeather(icao);
+  metars[icao] = { raw: w.raw, observedAt: w.observedAt, sample: w.sample };
+}
+for (const example of site.aviation.examples) {
+  const station = example.raw.split(' ')[0];
+  if (/^[A-Z]{4}$/.test(station) && !metars[station]) metars[station] = { raw: example.raw, observedAt: '', sample: true };
+}
 
 const init = await coreCall<{ files: { path: string; content: string }[] }>('term.init', { site, modes, metars, files: true });
-const first = await coreCall<{ lines: { t: string; k?: string; h?: string; c?: string }[][] }>('term.exec', {
-  line: 'cat about.md',
-  cwd: '~',
-  history: ['cat about.md'],
-  now: 0,
-});
+const run = (line: string) => coreCall<{ lines: Lines }>('term.exec', { line, cwd: '~', history: [line], now: 0 });
+const projects = await run('projects');
+const experience = await run('experience');
+const stats = await coreCall<{ lines: Lines }>('term.stats', { placeholder: true, pad: true, trackingSince: site.bot.trackingSince });
 
 const bot = site.bot;
 const tryThese = [
   { cmd: 'help', why: 'every command, explained' },
-  { cmd: 'ls', why: 'see what is here' },
+  { cmd: 'cat README.md', why: 'the whole portfolio in one file' },
   { cmd: 'projects', why: 'what I have built' },
-  { cmd: 'cat skills.txt', why: 'tools I use' },
-  { cmd: 'stats', why: 'the trading bot, live' },
+  { cmd: 'experience', why: 'where I have worked' },
+  { cmd: 'stats', why: 'the trading bot' },
+  { cmd: 'skills', why: 'tools I use' },
+  { cmd: 'licenses', why: 'pilot licenses' },
   { cmd: 'metar kabe', why: 'decode real weather' },
-  { cmd: 'neofetch', why: 'facts card' },
-  { cmd: 'tree', why: 'every file at a glance' },
-  { cmd: 'grep python', why: 'search everything' },
+  { cmd: 'grep -i python', why: 'search everything' },
   { cmd: 'open github', why: 'get a link' },
-  { cmd: 'mode finance', why: 'switch view' },
+  { cmd: 'mode aviation', why: 'switch view' },
   { cmd: 'sudo hire franco', why: 'try it' },
 ];
 const cheats = [
@@ -54,6 +58,7 @@ const cheats = [
   ['clear', 'wipe the screen'],
 ];
 const jsonForScript = JSON.stringify(site).replace(/</g, '\\u003c');
+const prompt = 'visitor@portfolio:~$';
 ---
 
 <TerminalLayout
@@ -68,6 +73,8 @@ const jsonForScript = JSON.stringify(site).replace(/</g, '\\u003c');
       data-metars={JSON.stringify(metars)}
       data-api-base={bot.apiBase}
       data-stats-path={bot.statsPath}
+      data-history-path={bot.historyPath}
+      data-history-live={String(bot.historyLive)}
       data-timeout={bot.timeoutMs}
       data-tracking-since={bot.trackingSince}
     >
@@ -76,12 +83,21 @@ const jsonForScript = JSON.stringify(site).replace(/</g, '\\u003c');
           <span class="dots"><i></i><i></i><i></i></span>
           <span class="term-title" data-title>visitor@portfolio: ~</span>
         </div>
+        <header class="term-banner">
+          <h1 class="term-name">{site.name}</h1>
+          <p class="term-pos">{site.positioning}</p>
+          <p class="term-open">{site.openTo}</p>
+        </header>
         <div class="term-screen" role="log" aria-live="polite" aria-relevant="additions" aria-label="Terminal output" tabindex="0" data-screen>
-          <div class="term-line term-echo"><span class="ps">visitor@portfolio:~$</span> cat about.md</div>
-          <TermLines lines={first.lines} />
+          <div class="term-line term-echo"><span class="ps">{prompt}</span> projects</div>
+          <TermLines lines={projects.lines} />
+          <div class="term-line term-echo"><span class="ps">{prompt}</span> stats</div>
+          <div data-stats-block><TermLines lines={stats.lines} /></div>
+          <div class="term-line term-echo"><span class="ps">{prompt}</span> experience</div>
+          <TermLines lines={experience.lines} />
         </div>
         <form class="term-input" data-form autocomplete="off">
-          <label class="ps" for="term-cmd" data-ps>visitor@portfolio:~$</label>
+          <label class="ps" for="term-cmd" data-ps>{prompt}</label>
           <input
             id="term-cmd"
             name="command"
@@ -96,6 +112,7 @@ const jsonForScript = JSON.stringify(site).replace(/</g, '\\u003c');
             disabled
             data-input
           />
+          <button type="submit" class="run" data-run-button>run</button>
         </form>
         <div class="term-keys" data-keys>
           <button type="button" data-key="tab">Tab</button>
@@ -107,9 +124,10 @@ const jsonForScript = JSON.stringify(site).replace(/</g, '\\u003c');
       </section>
 
       <aside class="term-panel" aria-labelledby="panel-h">
-        <h1 id="panel-h">Terminal view</h1>
+        <h2 id="panel-h">How this works</h2>
         <p class="panel-lead">
-          A real shell, made for reading. Type a command and press Enter, or click anything green.
+          A real shell, made for reading. Type a command and press Enter, or click anything green. Everything it shows comes from the
+          same data as the other views, and nothing here can break.
         </p>
 
         <h2>Try these</h2>

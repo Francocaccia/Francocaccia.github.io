@@ -130,9 +130,14 @@ Json opTermComplete(const Json& in) {
   return requireShell().complete(in.at("line").asString(), cwd);
 }
 
-// input: {stats: <payload of /stats> | null, trackingSince}
+// input: {stats: <payload of /stats> | null, trackingSince, history?: <payload of /stats/history>,
+//         placeholder?: bool, pad?: bool}
 Json opTermStats(const Json& in) {
-  return requireShell().statsOutput(in.at("stats"), in.at("trackingSince").asString());
+  Term& t = requireShell();
+  std::string since = in.at("trackingSince").asString();
+  bool pad = in.at("pad").asBool(false);
+  if (in.at("placeholder").asBool(false)) return t.statsPlaceholder(since, pad);
+  return t.statsOutput(in.at("stats"), since, in.at("history"), pad);
 }
 
 // input: {raw, observedAt?}

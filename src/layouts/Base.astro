@@ -24,7 +24,7 @@ const { title, description, current, theme = 'gateway', fonts = [], noindex = fa
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const fullTitle = title === site.name ? title : `${title} | ${site.name}`;
 const coreV = await coreVersion();
-const themeColor = { gateway: '#0e1013', finance: '#07111f', terminal: '#000000', aviation: '#0a0c0d' };
+const themeColor = { gateway: '#0e1013', finance: '#0d1210', terminal: '#000000', aviation: '#d9dde3' };
 ---
 
 <!doctype html>
@@ -38,7 +38,7 @@ const themeColor = { gateway: '#0e1013', finance: '#07111f', terminal: '#000000'
     <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
     <meta name="generator" content={`Astro, fc-core ${coreV}`} />
     <meta name="theme-color" content={themeColor[theme]} />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content={theme === 'aviation' ? 'light' : 'dark'} />
     {fonts.map((href) => <link rel="preload" as="font" type="font/woff2" href={href} crossorigin />)}
 
     <meta property="og:type" content="website" />
