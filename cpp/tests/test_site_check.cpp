@@ -12,7 +12,7 @@ namespace {
 
 const char* kValidSite = R"({
   "name":"A B","location":"X","positioning":"p","openTo":"o","email":"a@b.c",
-  "resume":"/r.pdf","photo":"/p.jpg","footer":"f",
+  "resume":"/r.pdf","footer":"f",
   "technicalSkills":["Go","C++"],"coursework":["Finance"],
   "links":{"github":"https://g","linkedin":"https://l"},
   "projects":[{"id":"p1","name":"P","tag":"PP","summary":"s","stack":["Go"],"status":"live","statusLabel":"Live"}],

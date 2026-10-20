@@ -260,7 +260,7 @@ std::vector<Issue> checkSite(const Json& site, const std::vector<std::string>& f
     return c.issues;
   }
 
-  for (const char* key : {"name", "location", "positioning", "openTo", "email", "resume", "photo", "footer"}) {
+  for (const char* key : {"name", "location", "positioning", "openTo", "email", "resume", "footer"}) {
     c.need(site, "", key, Json::Type::String);
   }
   if (const Json* resume = site.find("resume")) {

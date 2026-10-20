@@ -14,7 +14,7 @@ const char* kSite = R"({
   "name":"Franco Caccia","location":"Pennsylvania, USA",
   "positioning":"Quant and software developer.","openTo":"Open to quant roles.",
   "links":{"github":"https://github.com/Francocaccia","linkedin":"https://www.linkedin.com/in/x/"},
-  "email":"TODO: add email","resume":"TODO: add resume","photo":"TODO","footer":"f",
+  "email":"TODO: add email","resume":"TODO: add resume","footer":"f",
   "projects":[
     {"id":"autotradingbot","name":"AutoTradingBot","tag":"ATB","status":"live","statusLabel":"Live, paper trading",
      "period":"January 2026 to present","summary":"Long-only portfolio manager in Go.","stack":["Go","Python"],"repo":"https://github.com/Francocaccia/AutoTradingBot"},
