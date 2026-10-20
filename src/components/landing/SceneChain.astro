@@ -1,0 +1,86 @@
+---
+// Crypto scene, kept honest: a toy chain of a few blocks mined at build time by the C++ core with real SHA-256,
+// a "tamper" switch that shows what a changed block does to every block after it (both versions are
+// precomputed and swapped by CSS alone), and a health-factor slider that is plain arithmetic.
+// No prices, no mempool, no wallet, nothing "live".
+import type { ChainDemo, ChainTamperBlock } from '../../lib/landing-data';
+
+interface Props {
+  chain: ChainDemo;
+  defiRepo: string;
+  mev: { name: string; status: string };
+}
+
+const { chain, defiRepo, mev } = Astro.props;
+const TARGET = 1; // the block that gets tampered with: "block 2"
+const tampered = chain.tamper[TARGET];
+const zeros = (hash: string) => hash.length - hash.replace(/^0+/, '').length;
+const short = (hash: string) => hash.slice(0, 16);
+// After a changed block, every block that follows stops verifying (the core flags the first failures; the rest
+// follow from them), so the cascade is spelled out here.
+let firstBroken = -1;
+const states = tampered.blocks.map((b: ChainTamperBlock, i: number) => {
+  if (b.meetsDifficulty && b.linked && firstBroken < 0) return 'valid';
+  if (firstBroken < 0) firstBroken = i;
+  if (i === firstBroken) {
+    return `broken: ${[!b.meetsDifficulty && 'its hash no longer starts with the required zeros', !b.linked && 'the previous hash it points to has changed'].filter(Boolean).join(' and ')}`;
+  }
+  return 'broken: an earlier block no longer verifies';
+});
+---
+
+<div class="panel chain-panel">
+  <div class="chain" data-chain>
+    <p class="chain-cap">Toy chain, computed at build. {chain.algorithm}, difficulty {chain.difficulty} leading zeros. Each block hashes <code>{chain.format}</code>.</p>
+    <p class="tamper">
+      <input type="checkbox" id="tamper" class="tamper-input" />
+      <label for="tamper" class="tamper-label">Tamper with block {TARGET + 1}</label>
+    </p>
+    <ol class="blocks">
+      {
+        chain.blocks.map((b, i) => {
+          const t = tampered.blocks[i];
+          const state = states[i];
+          return (
+            <li class="block" style={`--i:${i}`} data-state={state === 'valid' ? 'ok' : 'bad'}>
+              <h3 class="block-h">Block {b.index + 1}</h3>
+              <dl>
+                <dt>Data</dt>
+                <dd>
+                  <span class="v-ok">{b.data}</span>
+                  <span class="v-t">{t.data}</span>
+                </dd>
+                <dt>Previous</dt>
+                <dd class="mono">{short(b.prev)}…</dd>
+                <dt>Nonce</dt>
+                <dd class="mono">{b.nonce.toLocaleString('en-US')}</dd>
+                <dt>Hash</dt>
+                <dd class="mono">
+                  <span class="v-ok"><b class="z">{b.hash.slice(0, zeros(b.hash))}</b>{short(b.hash).slice(zeros(b.hash))}…</span>
+                  <span class="v-t"><b class="z">{t.hash.slice(0, zeros(t.hash))}</b>{short(t.hash).slice(zeros(t.hash))}…</span>
+                </dd>
+              </dl>
+              <p class="status">
+                <span class="v-ok">valid</span>
+                <span class="v-t">{state}</span>
+              </p>
+            </li>
+          );
+        })
+      }
+    </ol>
+  </div>
+
+  <div class="hf" data-hf>
+    <h3 class="hf-h">Health factor</h3>
+    <p class="hf-formula">health factor = collateral × liquidation threshold ÷ debt. Below 1, a lending protocol may liquidate.</p>
+    <p class="hf-params">Illustrative parameters: collateral 150, threshold 0.8, debt 100.</p>
+    <p class="hf-row">
+      <label for="hf-move">Collateral price move</label>
+      <input type="range" id="hf-move" min="-40" max="20" step="1" value="0" disabled />
+      <output for="hf-move" class="hf-out"><span data-hf-move>+0%</span> → <strong data-hf-value>1.20</strong> <span data-hf-state>healthy</span></output>
+    </p>
+    <div class="hf-gauge" aria-hidden="true"><span class="hf-fill" style="--hf:1.2"></span><span class="hf-line"></span></div>
+    <p class="note">Educational, not audited. <a href={defiRepo} target="_blank" rel="noopener noreferrer">defi-lending-core on GitHub</a>. {mev.name}: {mev.status}.</p>
+  </div>
+</div>

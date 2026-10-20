@@ -1,0 +1,39 @@
+---
+// One chapter of the landing page: a tall section with a sticky stage. The words are always real text in the
+// page; the scene beside them is decoration that moves with the scroll (where the browser supports scroll
+// timelines and motion is welcome) and is a finished still frame everywhere else.
+interface Props {
+  scene: 'finance' | 'terminal' | 'chain' | 'aviation';
+  id: string;
+  kicker: string;
+  title: string;
+  lede: string;
+  stat: { value: string; label: string };
+  cta: { href: string; label: string; mode?: string; external?: boolean };
+}
+
+const { scene, id, kicker, title, lede, stat, cta } = Astro.props;
+---
+
+<section class="chapter" data-scene={scene} aria-labelledby={`${id}-h`} id={id}>
+  <div class="stage">
+    <div class="copy">
+      <p class="kicker">{kicker}</p>
+      <h2 id={`${id}-h`}>{title}</h2>
+      <p class="lede">{lede}</p>
+      <p class="proof"><span class="n">{stat.value}</span> <span class="l">{stat.label}</span></p>
+      <p class="cta-row">
+        <a
+          class="cta"
+          href={cta.href}
+          data-mode={cta.mode}
+          target={cta.external ? '_blank' : undefined}
+          rel={cta.external ? 'noopener noreferrer' : undefined}>{cta.label}</a
+        >
+      </p>
+    </div>
+    <div class="scene">
+      <slot />
+    </div>
+  </div>
+</section>

@@ -1,0 +1,28 @@
+---
+// Aviation scene: the route from the C++ core drawn on a bare globe (the full map is on the Aviation page),
+// with a plane that follows it, and the latest METAR snapshot revealed group by group.
+import { metarTokens } from '../../lib/metar-tokens';
+import type { flightScene, metarPreview } from '../../lib/landing-data';
+
+interface Props {
+  flight: Awaited<ReturnType<typeof flightScene>>;
+  metar: ReturnType<typeof metarPreview>;
+}
+
+const { flight, metar } = Astro.props;
+const tokens = metarTokens(metar.raw);
+---
+
+<div class="panel flight-panel">
+  <div class="route" role="img" aria-label={`Route from SABE through KLYH to KABE, ${Math.round(flight.route.totalNm).toLocaleString('en-US')} nautical miles in two great-circle legs.`}>
+    <div set:html={flight.svg} />
+    <svg class="plane-layer" viewBox="0 0 360 360" aria-hidden="true" focusable="false">
+      <path class="plane" style={`offset-path: path('${flight.planePath}')`} d="M-7 0L5 -4L5 -1L9 0L5 1L5 4Z" />
+    </svg>
+  </div>
+  <div class="metar" role="region" aria-label="Latest weather report snapshot">
+    <p class="metar-meta">{metar.label} · KABE · {metar.stamp}</p>
+    <p class="metar-line">{tokens.map((t, i) => <span class={`mt mt-${t.kind}`} style={`--i:${i}`}>{t.text} </span>)}</p>
+    {metar.sample && <p class="note">Sample data, a format demo. Not a live report.</p>}
+  </div>
+</div>

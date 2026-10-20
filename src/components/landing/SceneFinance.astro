@@ -1,0 +1,28 @@
+---
+// Finance scene: illustrative candles from the C++ chart engine, growing one by one, and a ticker.
+// The data is made up and says so; nothing here is the bot's real performance.
+import type { financeScene } from '../../lib/landing-data';
+
+interface Props {
+  data: Awaited<ReturnType<typeof financeScene>>;
+}
+
+const { data } = Astro.props;
+const fmt = (n: number) => n.toFixed(1);
+---
+
+<div class="panel fin-panel">
+  <p class="badge">Illustrative data, not real results</p>
+  <div class="candles" role="img" aria-label={`A made-up daily candle chart of ${data.days} days, indexed to 100. Illustrative data, not real results.`} set:html={data.svg} />
+  <div class="ticker" aria-label="Illustrative index values">
+    <div class="ticker-track">
+      <ul>
+        {data.ticker.map((t) => <li><span class="tn">{t.name}</span> <span class="tv">{fmt(t.value)}</span></li>)}
+      </ul>
+      <ul class="ticker-dup" aria-hidden="true">
+        {data.ticker.map((t) => <li><span class="tn">{t.name}</span> <span class="tv">{fmt(t.value)}</span></li>)}
+      </ul>
+    </div>
+  </div>
+  <p class="note">Indexed to 100 on day 1. Percentages and index points only.</p>
+</div>

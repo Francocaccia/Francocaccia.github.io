@@ -19,7 +19,8 @@
 }
 
 /* Finance: "annual letter". Near-black green, coral accent, serif display. */
-:root[data-theme='finance'] {
+:root[data-theme='finance'],
+[data-scene='finance'] {
   color-scheme: dark;
   --bg: #0d1210;
   --bg-raised: #101713;
@@ -44,7 +45,8 @@
 }
 
 /* Terminal: amber phosphor on black. Clickable text is green. */
-:root[data-theme='terminal'] {
+:root[data-theme='terminal'],
+[data-scene='terminal'] {
   color-scheme: dark;
   --bg: #000;
   --bg-raised: #0c0a07;
@@ -68,7 +70,8 @@
 }
 
 /* Aviation: an ICAO flight plan form. Paper, ink and a red stamp; light, unlike the other modes. */
-:root[data-theme='aviation'] {
+:root[data-theme='aviation'],
+[data-scene='aviation'] {
   color-scheme: light;
   --bg: #d9dde3;
   --bg-raised: #fbfaf4; /* the paper */
@@ -92,4 +95,24 @@
   --focus: #b3261e;
   --font-body: 'B612', system-ui, sans-serif;
   --font-mono: 'B612 Mono', ui-monospace, monospace;
+}
+
+/* Crypto (landing page only): deep ink with a cool blue, for the toy blockchain scene. */
+[data-scene='chain'] {
+  color-scheme: dark;
+  --bg: #0b0f1a;
+  --bg-raised: #111827;
+  --bg-hover: #182036;
+  --fg: #e8ecf8;
+  --fg-muted: #a0abc8;
+  --accent: #8fb0ff;
+  --line: #233050;
+  --line-strong: #3a4a76;
+  --link: #a9c2ff;
+  --link-hover: #d3e0ff;
+  --focus: #ffd166;
+  --ok: #7ee0a5;
+  --bad: #ff8a99;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }

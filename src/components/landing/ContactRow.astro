@@ -1,0 +1,19 @@
+---
+import { site, real, withBase } from '../../lib/site';
+
+const email = real(site.email);
+const resume = real(site.resume);
+---
+
+<section class="contact" id="contact" aria-labelledby="contact-h">
+  <div class="contact-inner">
+    <h2 id="contact-h">Get in touch</h2>
+    <p class="contact-lead">{site.openTo}</p>
+    <ul class="contact-links">
+      {email && <li><a class="btn btn-primary" href={`mailto:${email}`}>{email}</a></li>}
+      <li><a class="btn" href={site.links.github}>GitHub</a></li>
+      <li><a class="btn" href={site.links.linkedin}>LinkedIn</a></li>
+      {resume && <li><a class="btn" href={withBase(resume)}>Resume (PDF)</a></li>}
+    </ul>
+  </div>
+</section>

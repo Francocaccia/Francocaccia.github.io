@@ -1,0 +1,981 @@
+/* Landing page. The base state is the finished, static, fully readable page: no pinning, no transforms, no
+   motion. Motion is added only where the browser supports scroll-driven animations (@supports), the visitor has
+   not asked for reduced motion, and has not paused motion (html[data-motion='off']). Every animation moves
+   only transform and opacity (and, for the typing, clip-path), so it stays on the compositor. */
+
+main:has(> .landing) {
+  padding-block: 0;
+}
+
+.landing {
+  --lp-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --lp-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --stage-h: calc(100svh - var(--bar-h));
+  overflow-x: clip;
+}
+
+/* Scenes keep the page's own two font families (the landing loads no others). */
+.landing [data-scene] {
+  --font-body: var(--lp-sans);
+  --font-mono: var(--lp-mono);
+}
+
+.btn,
+.cta,
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--fg);
+  font-family: var(--lp-mono);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.btn:hover,
+.cta:hover,
+.chip:hover {
+  background: var(--bg-hover);
+  color: var(--fg);
+}
+
+.btn-primary {
+  border-color: var(--fg);
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: #fff;
+  color: var(--bg);
+}
+
+.chip {
+  border-color: var(--link);
+  border-radius: 999px;
+  color: var(--link);
+}
+
+.chip[hidden] {
+  display: none;
+}
+
+.muted,
+.note {
+  color: var(--fg-muted);
+}
+
+.note {
+  margin: 10px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+/* ---- hero ----------------------------------------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: var(--stage-h);
+  padding: 48px var(--gutter) 88px;
+  isolation: isolate;
+  overflow: clip;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: -12%;
+  z-index: -1;
+  background:
+    radial-gradient(60% 50% at 18% 18%, rgb(124 196 255 / 0.16), transparent 60%),
+    radial-gradient(50% 45% at 86% 28%, rgb(255 138 102 / 0.13), transparent 60%),
+    radial-gradient(60% 50% at 58% 92%, rgb(255 179 71 / 0.1), transparent 60%);
+}
+
+.hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.4;
+  mask-image: radial-gradient(ellipse at 40% 45%, #000 25%, transparent 72%);
+}
+
+.hero-inner {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.hero-kicker {
+  margin: 0 0 12px;
+  color: var(--fg-muted);
+  font-family: var(--lp-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 0 0 0.25em;
+  font-size: clamp(2.75rem, 9.5vw, 6.5rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.hero-lead {
+  max-width: 40rem;
+  margin: 0 0 0.5em;
+  font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+  line-height: 1.45;
+}
+
+.hero-open {
+  margin: 0 0 28px;
+  color: var(--fg-muted);
+}
+
+.hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.continue {
+  min-height: 44px;
+  margin: 0;
+}
+
+.scroll-cue {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+
+.scroll-cue:hover {
+  color: var(--fg);
+  background: var(--bg-hover);
+}
+
+/* ---- statement ------------------------------------------------------------------------------------------ */
+
+.statement {
+  display: grid;
+  place-items: center;
+  min-height: 70svh;
+  padding: 64px var(--gutter);
+  border-top: 1px solid var(--line);
+}
+
+.statement-words {
+  margin: 0;
+  font-size: clamp(2.6rem, 11vw, 8rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  text-align: center;
+}
+
+.statement-words .w {
+  display: block;
+}
+
+.statement-words .w3 {
+  color: var(--link);
+}
+
+/* ---- chapters ------------------------------------------------------------------------------------------- */
+
+.chapter {
+  position: relative;
+  padding: 72px 0;
+  background: var(--bg);
+  color: var(--fg);
+  overflow-x: clip;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 90svh;
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+  align-items: center;
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+@media (min-width: 900px) {
+  .stage {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 56px;
+  }
+}
+
+.kicker {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-family: var(--lp-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.chapter h2 {
+  margin: 0 0 0.4em;
+  font-size: clamp(1.9rem, 4.4vw, 3.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.lede {
+  max-width: 34rem;
+  margin: 0 0 20px;
+  color: var(--fg-muted);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+.proof {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 0 0 20px;
+}
+
+.proof .n {
+  color: var(--fg);
+  font-size: clamp(2.5rem, 6vw, 3.75rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.proof .l {
+  color: var(--fg-muted);
+  font-family: var(--lp-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cta-row {
+  margin: 0;
+}
+
+.cta {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.panel {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--bg-raised);
+}
+
+/* Aviation reads on paper, like its page. */
+[data-scene='aviation'] .cta { color: var(--ink); border-color: var(--ink); }
+[data-scene='aviation'] .kicker { color: var(--red); }
+[data-scene='aviation'] .lede,
+[data-scene='aviation'] .proof .l { color: var(--fg-muted); }
+
+/* ---- finance scene -------------------------------------------------------------------------------------- */
+
+.badge {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 2px 10px;
+  border: 1px solid var(--note);
+  color: var(--note);
+  font-family: var(--lp-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.candles :where(svg) {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.candles .fcz-wick { stroke: var(--accent); stroke-width: 1.5; }
+.candles .fcz-body { stroke: var(--accent); stroke-width: 1.5; }
+.candles .fcz-body.up { fill: var(--accent); }
+.candles .fcz-body.dn { fill: var(--bg-raised); }
+
+.ticker {
+  margin-top: 14px;
+  overflow: hidden;
+  border-block: 1px solid var(--line);
+}
+
+.ticker-track {
+  font-family: var(--lp-mono);
+  font-size: 0.875rem;
+}
+
+.ticker-track ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+  padding: 10px 0;
+  list-style: none;
+}
+
+.ticker-track li { white-space: nowrap; }
+.tn { color: var(--fg-muted); }
+.tv { color: var(--fg); font-weight: 600; }
+.ticker-track .ticker-dup { display: none; }
+
+/* ---- code scene ----------------------------------------------------------------------------------------- */
+
+.file {
+  margin: 0 0 8px;
+  color: var(--fg-muted);
+  font-family: var(--lp-mono);
+  font-size: 0.75rem;
+}
+
+.code {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  background: #000;
+  color: var(--accent);
+  font-family: var(--lp-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.code-line { display: block; white-space: pre; }
+
+.mini-term {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: #000;
+  font-family: var(--lp-mono);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+
+.mini-term .prompt { margin: 0 0 6px; color: var(--fg); }
+.mini-term .ps { color: var(--fg-muted); }
+.mini-out .term-line { white-space: pre; }
+.mini-out .k-dim { color: var(--fg-muted); }
+.mini-out .k-accent,
+.mini-out .k-head { color: var(--accent); font-weight: 600; }
+.mini-out .k-pos { color: var(--t-cmd); }
+.mini-out .k-neg,
+.mini-out .k-error { color: var(--t-error); }
+.mini-out a { color: var(--link); }
+
+/* ---- crypto scene --------------------------------------------------------------------------------------- */
+
+.chain-cap {
+  margin: 0 0 10px;
+  color: var(--fg-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.chain-cap code { font-family: var(--lp-mono); color: var(--fg); }
+
+.tamper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.tamper-input {
+  width: 24px;
+  height: 24px;
+  margin: 10px;
+  accent-color: var(--accent);
+}
+
+.tamper-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.block {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.block-h {
+  margin: 0 0 6px;
+  font-size: 0.9375rem;
+}
+
+.block dl { margin: 0; font-size: 0.75rem; }
+.block dt { margin-top: 4px; color: var(--fg-muted); letter-spacing: 0.04em; text-transform: uppercase; }
+.block dd { margin: 0; overflow-wrap: anywhere; }
+.mono { font-family: var(--lp-mono); }
+.z { color: var(--ok); font-weight: 600; }
+.status { margin: 8px 0 0; font-size: 0.75rem; font-weight: 600; color: var(--ok); }
+.v-t { display: none; }
+
+.chain:has(.tamper-input:checked) .v-ok { display: none; }
+.chain:has(.tamper-input:checked) .v-t { display: inline; }
+.chain:has(.tamper-input:checked) .block[data-state='bad'] { border-color: var(--bad); }
+.chain:has(.tamper-input:checked) .block[data-state='bad'] .status { color: var(--bad); }
+
+.hf {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.hf-h { margin: 0 0 6px; font-size: 1rem; }
+.hf-formula,
+.hf-params { margin: 0 0 4px; color: var(--fg-muted); font-size: 0.8125rem; line-height: 1.5; }
+.hf-row { display: grid; gap: 4px 12px; margin: 12px 0 8px; }
+
+.hf-row input[type='range'] {
+  width: 100%;
+  min-height: 44px;
+  accent-color: var(--accent);
+}
+
+.hf-out { font-family: var(--lp-mono); font-size: 0.875rem; }
+.hf-out strong { font-size: 1.125rem; }
+
+.hf-gauge {
+  position: relative;
+  height: 10px;
+  background: var(--line);
+}
+
+.hf-fill {
+  display: block;
+  width: calc(min(var(--hf, 1.2), 2) * 50%);
+  height: 100%;
+  background: var(--ok);
+}
+
+.hf[data-state='liquidatable'] .hf-fill { background: var(--bad); }
+
+.hf-line {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: 50%;
+  width: 2px;
+  background: var(--fg);
+}
+
+/* ---- aviation scene ------------------------------------------------------------------------------------- */
+
+.route {
+  position: relative;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.route .globe-svg { display: block; width: 100%; height: auto; }
+.plane-layer { position: absolute; inset: 0; width: 100%; height: 100%; }
+.plane { fill: var(--ink); offset-rotate: auto; offset-distance: 100%; }
+
+.globe-sea { fill: var(--map-sea); }
+.globe-grid { fill: none; stroke: var(--map-grid); stroke-width: 0.8; }
+.globe-equator { fill: none; stroke: var(--map-equator); stroke-width: 1; }
+.globe-arc { fill: none; stroke: var(--red); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.globe-arrow { fill: var(--red); }
+.globe-rim { fill: none; stroke: var(--frame); stroke-width: 1.5; }
+.globe-apt { fill: var(--ink); stroke: var(--bg-raised); stroke-width: 2; }
+.globe-leader { stroke: var(--ink); stroke-width: 0.8; }
+.globe-label,
+.globe-chip,
+.globe-country {
+  font-family: var(--lp-mono);
+  font-size: 12px;
+  paint-order: stroke;
+  stroke: var(--bg-raised);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.globe-label { fill: var(--ink); font-weight: 600; font-size: 13px; }
+.globe-chip { fill: var(--red); font-weight: 600; }
+
+.metar { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-strong); }
+.metar-meta { margin: 0 0 6px; color: var(--fg-muted); font-family: var(--lp-mono); font-size: 0.75rem; letter-spacing: 0.04em; }
+.metar-line { margin: 0; font-family: var(--lp-mono); font-size: 0.9375rem; line-height: 1.8; overflow-wrap: anywhere; }
+.mt-stn { color: var(--ink); font-weight: 600; }
+.mt-time { color: #0b5a6b; }
+.mt-wind { color: #1b6b3a; }
+.mt-vis,
+.mt-qnh { color: #0b5a8a; }
+.mt-cloud { color: var(--fg); }
+.mt-temp { color: #4b5e00; }
+.mt-rmk { color: var(--fg-muted); }
+
+/* ---- the doors ------------------------------------------------------------------------------------------ */
+
+.views,
+.contact {
+  padding: 80px var(--gutter);
+  border-top: 1px solid var(--line);
+}
+
+.views-inner,
+.contact-inner {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.views h2,
+.contact h2 {
+  margin: 0 0 0.3em;
+  font-size: clamp(1.8rem, 4vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.views-lead,
+.contact-lead {
+  max-width: 40rem;
+  margin: 0 0 28px;
+  color: var(--fg-muted);
+}
+
+.doors {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin: 0 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 900px) {
+  .doors { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.door {
+  --door: var(--accent);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--line-strong);
+  border-top: 3px solid var(--door);
+  border-radius: 10px;
+  background: var(--bg-raised);
+  color: var(--fg);
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.door:hover { background: var(--bg-hover); color: var(--fg); }
+.door-finance { --door: #ff8a66; }
+.door-terminal { --door: #ffb347; }
+.door-aviation { --door: #d9dde3; }
+
+.preview {
+  display: block;
+  border-bottom: 1px solid var(--line);
+}
+
+.pv {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 124px;
+  padding: 14px 16px 30px;
+}
+
+.pv-tag {
+  position: absolute;
+  right: 10px;
+  bottom: 6px;
+  left: 16px;
+  text-align: right;
+  font-family: var(--lp-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.pv-fin { background: #0d1210; }
+.pv-fin .pv-tag { color: #a3aba2; }
+.pv-svg { display: block; width: 100%; max-width: 280px; }
+.pv-svg :where(svg) { display: block; width: 100%; height: auto; }
+.pv-svg .fcz-wick { stroke: #ff8a66; stroke-width: 1.2; }
+.pv-svg .fcz-body.up { fill: #ff8a66; stroke: #ff8a66; }
+.pv-svg .fcz-body.dn { fill: #0d1210; stroke: #ff8a66; stroke-width: 1.2; }
+
+.pv-term {
+  background: #000;
+  color: #ff9a1f;
+  font-family: var(--lp-mono);
+  font-size: 0.75rem;
+}
+
+.pv-line { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pv-ps { color: #b87a30; }
+.pv-out { display: block; color: #ffb347; }
+.pv-out .term-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv-term .k-accent,
+.pv-term .k-head { color: #ffc266; font-weight: 600; }
+.pv-term .k-dim { color: #b87a30; }
+
+.pv-avi { background: #fbfaf4; color: #1f2a3c; font-family: var(--lp-mono); font-size: 0.75rem; }
+.pv-avi .pv-tag { color: #33415a; }
+.pv-metar { line-height: 1.7; overflow-wrap: anywhere; }
+.pv-avi .mt-stn { color: #0b2a5b; font-weight: 600; }
+.pv-avi .mt-time { color: #0b5a6b; }
+.pv-avi .mt-wind { color: #1b6b3a; }
+.pv-avi .mt-vis,
+.pv-avi .mt-qnh { color: #0b5a8a; }
+.pv-avi .mt-cloud { color: #1f2a3c; }
+.pv-avi .mt-temp { color: #4b5e00; }
+.pv-avi .mt-rmk { color: #33415a; }
+
+.door-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px 18px;
+}
+
+.door-name { font-family: var(--lp-mono); font-size: 1.35rem; font-weight: 600; }
+.door-promise { color: var(--fg); }
+.inside-h { color: var(--fg-muted); font-family: var(--lp-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.inside-list { display: flex; flex-direction: column; gap: 2px; color: var(--fg-muted); font-size: 0.875rem; }
+.inside-item::before { content: '· '; }
+.door-go { margin-top: auto; padding-top: 6px; color: var(--link); font-family: var(--lp-mono); font-size: 0.875rem; }
+.door-go::after { content: ' \2192'; }
+
+.quick { margin: 0; }
+.quick a { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* ---- contact -------------------------------------------------------------------------------------------- */
+
+.contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---- pause switch --------------------------------------------------------------------------------------- */
+
+.motion-toggle {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  z-index: 40;
+  min-height: 44px;
+  padding-inline: 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--bg-raised);
+  color: var(--fg);
+  font-family: var(--lp-mono);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.motion-toggle[hidden] { display: none; }
+.motion-toggle:hover { background: var(--bg-hover); }
+
+/* ---- motion --------------------------------------------------------------------------------------------- */
+
+@keyframes drift {
+  from { transform: translate3d(-2%, -1%, 0); }
+  to { transform: translate3d(2%, 1.5%, 0); }
+}
+@keyframes marquee {
+  to { transform: translate3d(-50%, 0, 0); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 28px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes grow {
+  from { transform: scaleY(0); }
+  to { transform: none; }
+}
+@keyframes type {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes fly {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The background drifts for a few cycles, then rests. */
+  html:not([data-motion='off']) .hero-bg {
+    animation: drift 38s ease-in-out 3 alternate both;
+  }
+
+  /* The ticker runs for a few laps, pauses on hover and focus, and wraps as a plain list when paused. */
+  html:not([data-motion='off']) .ticker-track {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0;
+    width: max-content;
+    padding: 0;
+    animation: marquee 30s linear 6;
+  }
+  html:not([data-motion='off']) .ticker-track ul {
+    display: flex;
+    gap: 28px;
+    margin: 0;
+    padding: 10px 14px;
+    list-style: none;
+  }
+  html:not([data-motion='off']) .ticker:hover .ticker-track,
+  html:not([data-motion='off']) .ticker:focus-within .ticker-track {
+    animation-play-state: paused;
+  }
+  html:not([data-motion='off']) .ticker-track .ticker-dup { display: flex; }
+
+  /* With JavaScript, each scene waits for its chapter to scroll into view, then plays once (the
+     fallback where scroll-driven animations are missing). Without JavaScript nothing is hidden. */
+  html:where(.js):not([data-motion='off']) .chapter .fcz-wick,
+  html:where(.js):not([data-motion='off']) .chapter .fcz-body {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: grow 0.6s ease-out both paused;
+    animation-delay: calc(var(--i, 0) * 28ms);
+  }
+  html:where(.js):not([data-motion='off']) .chapter .code-line {
+    animation: type 0.5s steps(24, end) both paused;
+    animation-delay: calc(var(--l, 0) * 120ms);
+  }
+  html:where(.js):not([data-motion='off']) .chapter .block {
+    animation: rise 0.6s ease-out both paused;
+    animation-delay: calc(var(--i, 0) * 140ms);
+  }
+  html:where(.js):not([data-motion='off']) .chapter .globe-arc {
+    stroke-dasharray: 1;
+    animation: draw 1.6s ease-in-out both paused;
+  }
+  html:where(.js):not([data-motion='off']) .chapter .plane {
+    animation: fly 2.4s ease-in-out both paused;
+  }
+  html:where(.js):not([data-motion='off']) .chapter .metar-line .mt {
+    animation: fade 0.35s ease-out both paused;
+    animation-delay: calc(1s + var(--i, 0) * 120ms);
+  }
+  html:where(.js):not([data-motion='off']) .chapter .copy {
+    animation: rise 0.7s ease-out both paused;
+  }
+  html:where(.js):not([data-motion='off']) .chapter.in :is(.fcz-wick, .fcz-body, .code-line, .block, .globe-arc, .plane, .mt, .copy) {
+    animation-play-state: running;
+  }
+  html:where(.js):not([data-motion='off']) .statement .w {
+    animation: rise 0.7s ease-out both paused;
+  }
+  html:where(.js):not([data-motion='off']) .statement.in .w {
+    animation-play-state: running;
+  }
+  html:where(.js):not([data-motion='off']) .statement .w2 { animation-delay: 0.12s; }
+  html:where(.js):not([data-motion='off']) .statement .w3 { animation-delay: 0.24s; }
+
+  /* Scroll-driven: the same keyframes, driven by the chapter's own scroll progress. The stage is pinned
+     while the scene plays. cover 28%..72% is the pinned stretch on a desktop; the ranges below sit inside it. */
+  @supports (animation-timeline: view()) {
+    html:not([data-motion='off']) .chapter {
+      view-timeline: --ch block;
+    }
+
+    @media (min-height: 521px) {
+      html:not([data-motion='off']) .chapter {
+        height: 260svh;
+        padding: 0;
+        content-visibility: visible;
+      }
+      html:not([data-motion='off']) .chapter .stage {
+        position: sticky;
+        top: var(--bar-h);
+        height: var(--stage-h);
+        overflow: clip;
+      }
+    }
+
+    @media (min-height: 521px) and (max-width: 899px) {
+      html:not([data-motion='off']) .chapter {
+        height: 200svh;
+      }
+    }
+
+    html:not([data-motion='off']) .chapter .copy {
+      animation-name: rise;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-play-state: running;
+      animation-timeline: --ch;
+      animation-range: cover 22% cover 34%;
+    }
+
+    html:not([data-motion='off']) .chapter .fcz-wick,
+    html:not([data-motion='off']) .chapter .fcz-body {
+      animation-name: grow;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-play-state: running;
+      animation-timeline: --ch;
+      animation-delay: 0s;
+      animation-range: cover calc(32% + var(--i, 0) * 0.8%) cover calc(40% + var(--i, 0) * 0.8%);
+    }
+    html:not([data-motion='off']) .chapter .code-line {
+      animation-name: type;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-play-state: running;
+      animation-timeline: --ch;
+      animation-delay: 0s;
+      animation-range: cover calc(32% + var(--l, 0) * 2.4%) cover calc(36% + var(--l, 0) * 2.4%);
+    }
+    html:not([data-motion='off']) .chapter .block {
+      animation-name: rise;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-play-state: running;
+      animation-timeline: --ch;
+      animation-delay: 0s;
+      animation-range: cover calc(32% + var(--i, 0) * 5%) cover calc(40% + var(--i, 0) * 5%);
+    }
+    html:not([data-motion='off']) .chapter .globe-arc {
+      animation-name: draw;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-play-state: running;
+      animation-timeline: --ch;
+      animation-range: cover 32% cover 52%;
+    }
+    html:not([data-motion='off']) .chapter .plane {
+      animation-name: fly;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-play-state: running;
+      animation-timeline: --ch;
+      animation-range: cover 38% cover 66%;
+    }
+    html:not([data-motion='off']) .chapter .metar-line .mt {
+      animation-name: fade;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-play-state: running;
+      animation-timeline: --ch;
+      animation-delay: 0s;
+      animation-range: cover calc(50% + var(--i, 0) * 1.5%) cover calc(54% + var(--i, 0) * 1.5%);
+    }
+    html:not([data-motion='off']) .chapter.in :is(.fcz-wick, .fcz-body, .code-line, .block, .globe-arc, .plane, .mt, .copy) {
+      animation-play-state: running;
+    }
+
+    /* The three words of the statement come in as the band scrolls through. */
+    html:not([data-motion='off']) .statement .w {
+      animation-name: rise;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-play-state: running;
+      animation-timeline: view();
+      animation-delay: 0s;
+    }
+    html:not([data-motion='off']) .statement .w1 { animation-range: entry 5% entry 55%; }
+    html:not([data-motion='off']) .statement .w2 { animation-range: entry 20% entry 70%; }
+    html:not([data-motion='off']) .statement .w3 { animation-range: entry 35% entry 85%; }
+
+    /* The hero background slides a little as the page scrolls away from it. */
+    html:not([data-motion='off']) .hero-bg {
+      animation-name: drift, fade;
+      animation-duration: 38s, auto;
+      animation-timing-function: ease-in-out, linear;
+      animation-iteration-count: 3, 1;
+      animation-direction: alternate, reverse;
+      animation-fill-mode: both, both;
+      animation-timeline: auto, scroll(root block);
+      animation-range: normal, 0 60svh;
+    }
+  }
+
+}
+
+/* Paused or reduced: the finished frames, laid out as a normal page. */
+html[data-motion='off'] .hero-bg,
+html[data-motion='off'] .ticker-track {
+  animation: none;
+}
+
+@media print {
+  .hero-bg,
+  .scroll-cue,
+  .motion-toggle,
+  .ticker { display: none !important; }
+  .chapter { height: auto !important; }
+}

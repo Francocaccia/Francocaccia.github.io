@@ -1,326 +1,117 @@
 ---
-// Gateway: pick a view. Never redirects; a remembered choice only reveals a "Continue in" chip.
-import GatewayLayout from '../layouts/GatewayLayout.astro';
+// Landing page. Composition only: every number, name and sentence comes from site.json or from the C++ core
+// at build time. The scenes are decoration that moves with the scroll where the browser supports it, and
+// finished still frames everywhere else (no JavaScript needed to read any of it).
+import LandingLayout from '../layouts/LandingLayout.astro';
+import Hero from '../components/landing/Hero.astro';
+import Chapter from '../components/landing/Chapter.astro';
+import SceneFinance from '../components/landing/SceneFinance.astro';
+import SceneCode from '../components/landing/SceneCode.astro';
+import SceneChain from '../components/landing/SceneChain.astro';
+import SceneFlight from '../components/landing/SceneFlight.astro';
+import Doors from '../components/landing/Doors.astro';
+import ContactRow from '../components/landing/ContactRow.astro';
+import MotionToggle from '../components/landing/MotionToggle.astro';
 import { site, withBase } from '../lib/site';
 import { enabledModes } from '../config';
 import { previewCandles } from '../lib/charts';
-import { stationWeather, ageText } from '../lib/weather';
+import { personJsonLd } from '../lib/person-jsonld';
+import { chainScene, codeExcerpt, financeScene, flightScene, metarPreview, terminalPreview } from '../lib/landing-data';
 
 const modes = enabledModes();
-const candles = await previewCandles(240, 72, 11, 28);
+const [finance, term, flight, doorCandles, chain] = await Promise.all([
+  financeScene(),
+  terminalPreview(modes.map((m) => m.id).filter((id) => id !== 'terminal')),
+  flightScene(),
+  previewCandles(240, 72, 11, 28),
+  chainScene(),
+]);
+const code = codeExcerpt();
+const metar = metarPreview();
 
-// The latest METAR for the aviation door preview (a snapshot, or a labeled sample).
-const metar = stationWeather('KABE');
-const metarAge = ageText(Date.now() - Date.parse(metar.observedAt));
-const tokenClass = (t: string) =>
-  /^[A-Z]{4}$/.test(t) ? 'm-stn'
-  : /^\d{6}Z$/.test(t) ? 'm-time'
-  : /KT$/.test(t) ? 'm-wind'
-  : /^(\d{4}|\d+SM)$/.test(t) ? 'm-vis'
-  : /^(FEW|SCT|BKN|OVC)/.test(t) ? 'm-cloud'
-  : /^M?\d{2}\/M?\d{2}$/.test(t) ? 'm-temp'
-  : /^[QA]\d{4}$/.test(t) ? 'm-qnh'
-  : 'm-rmk';
-const allTokens = metar.raw.split(' ').filter((t) => t !== 'METAR');
-const metarTokens = allTokens.slice(0, allTokens.includes('RMK') ? allTokens.indexOf('RMK') : 9);
-
-const person = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: site.name,
-  description: `${site.positioning} ${site.openTo}`,
-  url: 'https://francocaccia.github.io/',
-  address: { '@type': 'PostalAddress', addressRegion: 'Pennsylvania', addressCountry: 'US' },
-  sameAs: [site.links.github, site.links.linkedin],
+const stat = (id: string) => {
+  const h = site.highlights.find((x) => x.id === id);
+  if (!h) throw new Error(`landing: no highlight "${id}" in site.json`);
+  return { value: h.value, label: h.label };
 };
-const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
+const [atb, , defi, mev] = site.projects;
+const firstSentence = (text: string) => text.split('. ')[0].replace(/\.$/, '') + '.';
+const [w1, w2, w3] = site.finance.headline;
 ---
 
-<GatewayLayout title={site.name} description={`${site.name}'s portfolio in three views: aviation, terminal and finance. ${site.openTo}`}>
-  <script type="application/ld+json" slot="head" set:html={personJson} />
-  <div class="wrap">
-    <header class="hero">
-      <p class="hero-kicker">{site.location}</p>
-      <h1>{site.name}</h1>
-      <p class="hero-lead">{site.positioning}</p>
-      <p class="hero-open">{site.openTo}</p>
-    </header>
+<LandingLayout title="Quant, software developer and pilot" description={`${site.name}: ${site.positioning} ${site.openTo}`}>
+  <script type="application/ld+json" slot="head" set:html={personJsonLd()} />
+  <script is:inline>
+    document.documentElement.classList.add('js');
+    try {
+      if (localStorage.getItem('fc-motion') === 'off') document.documentElement.dataset.motion = 'off';
+    } catch (e) {}
+  </script>
+  <div class="landing">
+    <Hero />
 
-    <p class="continue" data-continue-slot>
-      {
-        modes.map((m) => (
-          <a class="chip" href={withBase(m.path)} data-mode={m.id} data-continue-for={m.id} hidden>
-            Continue in {m.label}
-          </a>
-        ))
-      }
-    </p>
+    <section class="statement" id="story" aria-label="What I do">
+      <p class="statement-words">
+        <span class="w w1">{w1}</span>
+        <span class="w w2">{w2}</span>
+        <span class="w w3">{w3}</span>
+      </p>
+    </section>
 
-    <h2 class="pick">Pick a view</h2>
-    <ul class="doors">
-      {
-        modes.map((m) => (
-          <li>
-            <a class={`door door-${m.id}`} href={withBase(m.path)} data-mode={m.id}>
-              <span class="preview" aria-hidden="true">
-                {m.id === 'finance' && (
-                  <span class="pv pv-fin">
-                    <span class="pv-svg" set:html={candles.svg} />
-                    <span class="pv-tag">illustrative data</span>
-                  </span>
-                )}
-                {m.id === 'terminal' && (
-                  <span class="pv pv-term">
-                    <span class="pv-line"><span class="pv-ps">franco@portfolio:~$</span> cat about.md</span>
-                    <span class="pv-line pv-out">{site.name}, {site.location}</span>
-                    <span class="pv-line"><span class="pv-ps">franco@portfolio:~$</span> <span class="caret"></span></span>
-                  </span>
-                )}
-                {m.id === 'aviation' && (
-                  <span class="pv pv-avi">
-                    <span class="pv-metar">
-                      {metarTokens.map((t) => <span class={tokenClass(t)}>{t} </span>)}
-                    </span>
-                    <span class="pv-tag">{metar.sample ? 'sample METAR' : `METAR, ${metarAge} old when built`}</span>
-                  </span>
-                )}
-              </span>
-              <span class="door-name">{m.label}</span>
-              <span class="door-promise">{m.promise}</span>
-              <span class="door-inside">
-                <span class="inside-h">Inside</span>
-                <span class="inside-list">{m.inside.join(' / ')}</span>
-              </span>
-              <span class="door-go">Open {m.label} view</span>
-            </a>
-          </li>
-        ))
-      }
-    </ul>
+    <Chapter
+      scene="finance"
+      id="ch-finance"
+      kicker="01 · Finance"
+      title={site.finance.quote}
+      lede={`${firstSentence(atb.summary)} Benchmarked against the S&P 500 and a 60/40 portfolio, on paper only.`}
+      stat={stat('fund-beta')}
+      cta={{ href: withBase('/finance/'), label: 'Read the finance view', mode: 'finance' }}
+    >
+      <SceneFinance data={finance} />
+    </Chapter>
 
-    <p class="quick"><a href={withBase('/summary/')}>Quick view: summary + resume</a></p>
-    <p class="note">Switch anytime from the top right.</p>
+    <Chapter
+      scene="terminal"
+      id="ch-code"
+      kicker="02 · Code"
+      title="Logic in C++, pages in Astro."
+      lede="The pages are static. The logic behind them (a weather decoder, a chart engine, the shell in the terminal view) is C++ compiled to WebAssembly. What you see here is built from it."
+      stat={stat('hours-saved')}
+      cta={{ href: withBase('/terminal/'), label: 'Open the terminal view', mode: 'terminal' }}
+    >
+      <SceneCode code={code} term={term.projects} />
+    </Chapter>
+
+    <Chapter
+      scene="chain"
+      id="ch-crypto"
+      kicker="03 · Crypto"
+      title="Lending math, tested to 100% coverage."
+      lede={`${firstSentence(defi.summary)} Below, a toy chain and a health-factor slider show the ideas, not a product.`}
+      stat={stat('defi-coverage')}
+      cta={{ href: defi.repo, label: 'See the lending protocol on GitHub', external: true }}
+    >
+      <SceneChain chain={chain} defiRepo={defi.repo} mev={{ name: mev.name, status: mev.statusLabel }} />
+    </Chapter>
+
+    <Chapter
+      scene="aviation"
+      id="ch-aviation"
+      kicker="04 · Aviation"
+      title="Route, weather and the math behind a flight."
+      lede="Instrument-rated commercial pilot. This is the route on the Aviation page: Buenos Aires, Lynchburg, Lehigh Valley, as two great-circle legs."
+      stat={stat('flight-hours')}
+      cta={{ href: withBase('/aviation/'), label: 'Open the aviation view', mode: 'aviation' }}
+    >
+      <SceneFlight flight={flight} metar={metar} />
+    </Chapter>
+
+    <Doors candles={doorCandles.svg} about={term.about} metar={metar} />
+    <ContactRow />
+    <MotionToggle />
   </div>
-</GatewayLayout>
+</LandingLayout>
 
-<style>
-  .hero {
-    padding-block: 8px 12px;
-  }
-  .hero-kicker {
-    margin: 0 0 8px;
-    color: var(--fg-muted);
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  h1 {
-    font-size: clamp(2.4rem, 8vw, 4.5rem);
-    letter-spacing: -0.02em;
-    margin-bottom: 0.2em;
-  }
-  .hero-lead {
-    max-width: 40rem;
-    font-size: clamp(1.05rem, 2.4vw, 1.3rem);
-    margin-bottom: 0.4em;
-  }
-  .hero-open {
-    color: var(--fg-muted);
-  }
-  .continue {
-    min-height: 44px;
-    margin-block: 8px 0;
-  }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    padding-inline: 18px;
-    border: 1px solid var(--accent);
-    border-radius: 999px;
-    background: var(--bg-raised);
-    color: var(--fg);
-    text-decoration: none;
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-  }
-  .chip[hidden] {
-    display: none;
-  }
-  .chip:hover {
-    background: var(--bg-hover);
-    color: var(--fg);
-  }
-  .pick {
-    margin: 24px 0 14px;
-    color: var(--fg-muted);
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    font-weight: 400;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .doors {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-    margin: 0 0 32px;
-    padding: 0;
-    list-style: none;
-  }
-  @media (min-width: 900px) {
-    .doors {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-  .door {
-    --door: var(--accent);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    height: 100%;
-    padding: 0 0 18px;
-    border: 1px solid var(--line-strong);
-    border-top: 3px solid var(--door);
-    border-radius: 6px;
-    background: var(--bg-raised);
-    color: var(--fg);
-    text-decoration: none;
-  }
-  .door:hover {
-    background: var(--bg-hover);
-    color: var(--fg);
-  }
-  .door-finance { --door: #ff8a66; }
-  .door-terminal { --door: #ff9a1f; }
-  .door-aviation { --door: #d9dde3; }
-  .door > :not(.preview) {
-    margin-inline: 18px;
-  }
-  .preview {
-    display: block;
-    min-height: 118px;
-    margin-bottom: 4px;
-    border-bottom: 1px solid var(--line);
-    background: #05070a;
-  }
-  .pv {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    min-height: 118px;
-    padding: 14px 16px;
-  }
-  .pv-tag {
-    position: absolute;
-    right: 10px;
-    bottom: 6px;
-    color: #8a929b;
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .pv-fin { background: #0d1210; }
-  .pv-svg {
-    display: block;
-    width: 100%;
-    max-width: 280px;
-  }
-  .pv-svg :global(.fcz-svg) {
-    width: 100%;
-    height: auto;
-  }
-  .pv-svg :global(.fcz-wick) { stroke-width: 1.2; }
-  .pv-svg :global(.fcz-wick) { stroke: #ff8a66; }
-  .pv-svg :global(.fcz-body.up) { fill: #ff8a66; stroke: #ff8a66; }
-  .pv-svg :global(.fcz-body.dn) { fill: #0d1210; stroke: #ff8a66; stroke-width: 1.2; }
-  .pv-term {
-    background: #000;
-    color: #ff9a1f;
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    font-size: 0.78rem;
-  }
-  .pv-line {
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .pv-ps { color: #b87a30; }
-  .pv-out { color: #ffb347; }
-  .caret {
-    display: inline-block;
-    width: 0.6em;
-    height: 1.05em;
-    vertical-align: text-bottom;
-    background: #ff9a1f;
-    animation: blink 1.1s steps(1) infinite;
-  }
-  @keyframes blink {
-    50% { opacity: 0; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .caret { animation: none; }
-  }
-  .pv-avi {
-    background: #fbfaf4;
-    color: #1f2a3c;
-    font-family: 'B612 Mono', ui-monospace, monospace;
-    font-size: 0.78rem;
-  }
-  .pv-metar {
-    line-height: 1.7;
-    overflow-wrap: anywhere;
-  }
-  .m-stn { color: #0b2a5b; font-weight: 700; }
-  .m-time { color: #0b5a6b; }
-  .m-wind { color: #1b6b3a; }
-  .m-vis { color: #0b5a8a; }
-  .m-cloud { color: #1f2a3c; }
-  .m-temp { color: #556b00; }
-  .m-qnh { color: #0b5a8a; }
-  .m-rmk { color: #33415a; }
-  .pv-avi .pv-tag { color: #33415a; }
-  .door-name {
-    font-family: var(--font-mono);
-    font-size: 1.35rem;
-    font-weight: 600;
-  }
-  .door-promise {
-    color: var(--fg);
-  }
-  .door-inside {
-    display: block;
-    color: var(--fg-muted);
-    font-size: 0.88rem;
-  }
-  .inside-h {
-    display: block;
-    margin-bottom: 2px;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .door-go {
-    margin-top: auto;
-    padding-top: 6px;
-    color: var(--link);
-    font-family: var(--font-mono);
-    font-size: 0.88rem;
-  }
-  .door-go::after {
-    content: ' →';
-  }
-  .quick {
-    margin-bottom: 4px;
-  }
-  .note {
-    color: var(--fg-muted);
-    font-size: 0.9rem;
-  }
-</style>
+<script>
+  import '../scripts/landing';
+</script>

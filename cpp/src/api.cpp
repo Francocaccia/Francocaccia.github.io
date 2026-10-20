@@ -8,9 +8,11 @@
 #include <memory>
 
 #include "clamp.hpp"
+#include "fc/chain.hpp"
 #include "fc/chart.hpp"
 #include "fc/geo.hpp"
 #include "fc/json.hpp"
+#include "fc/sha256.hpp"
 #include "fc/site_check.hpp"
 #include "fc/stats.hpp"
 #include "fc/term.hpp"
@@ -168,6 +170,23 @@ Json opGeoRoute(const Json& in) {
   return routeGeometry(in);
 }
 
+// input: {text}  (at most 4096 bytes)
+Json opHashSha256(const Json& in) {
+  const std::string& text = in.at("text").asString();
+  if (text.size() > 4096) throw ApiError{"hash.sha256: text is limited to 4096 bytes"};
+  Json out = Json::object();
+  out.set("hex", sha256Hex(text));
+  return out;
+}
+
+// input: {data?: [string], difficulty?: 1..4}
+Json opChainDemo(const Json& in) {
+  Json out;
+  std::string error;
+  if (!buildChain(in, out, error)) throw ApiError{error};
+  return out;
+}
+
 const std::map<std::string, Handler>& handlers() {
   static const std::map<std::string, Handler> table = {
       {"version", opVersion},
@@ -184,6 +203,8 @@ const std::map<std::string, Handler>& handlers() {
       {"taf.decode", opTafDecode},
       {"wind.components", opWindComponents},
       {"geo.route", opGeoRoute},
+      {"hash.sha256", opHashSha256},
+      {"chain.demo", opChainDemo},
   };
   return table;
 }

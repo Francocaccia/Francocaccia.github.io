@@ -1,0 +1,37 @@
+---
+// The first screen: the name, what I do, and the ways forward. The primary link is always there; the
+// "Continue in ..." chip (revealed by mode.ts for a returning visitor) only adds to it.
+import { site, real, withBase } from '../../lib/site';
+import { enabledModes } from '../../config';
+
+const modes = enabledModes();
+const resume = real(site.resume);
+const email = real(site.email);
+---
+
+<header class="hero" aria-labelledby="hero-h">
+  <div class="hero-bg" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <p class="hero-kicker">{site.location}</p>
+    <h1 id="hero-h">{site.name}</h1>
+    <p class="hero-lead">{site.positioning}</p>
+    <p class="hero-open">{site.openTo}</p>
+    <p class="hero-cta">
+      <a class="btn btn-primary" href="#views">Choose a view</a>
+      {resume && <a class="btn" href={withBase(resume)}>Resume (PDF)</a>}
+      {email ? <a class="btn" href={`mailto:${email}`}>Contact</a> : <a class="btn" href="#contact">Contact</a>}
+    </p>
+    <p class="continue" data-continue-slot>
+      {
+        modes.map((m) => (
+          <a class="chip" href={withBase(m.path)} data-mode={m.id} data-continue-for={m.id} hidden>
+            Continue in {m.label}
+          </a>
+        ))
+      }
+    </p>
+  </div>
+  <a class="scroll-cue" href="#story" aria-label="Scroll to the story">
+    <span aria-hidden="true">&darr;</span>
+  </a>
+</header>

@@ -24,6 +24,27 @@ if (existsSync(aviation)) {
   if (/Coordinates approximate/.test(html)) problems.push('aviation page still says "Coordinates approximate"');
   if (html.length > 90 * 1024) problems.push(`aviation page is ${html.length} bytes (budget 90 KB)`);
 }
+// The landing page: no WebAssembly and no request to the bot, only the gateway's fonts, a small script budget.
+const landing = join(root, 'dist', 'index.html');
+if (existsSync(landing)) {
+  const html = readFileSync(landing, 'utf8');
+  if (/\.wasm/.test(html)) problems.push('the landing page references a .wasm file');
+  if (/onrender\.com/.test(html)) problems.push('the landing page mentions the bot API host');
+  for (const m of html.matchAll(/rel="preload" as="font" type="font\/woff2" href="([^"]+)"/g)) {
+    if (!/ibm-plex/.test(m[1])) problems.push(`the landing page preloads a font that is not IBM Plex: ${m[1]}`);
+  }
+  let jsBytes = 0;
+  const files = new Set([...html.matchAll(/<script[^>]+src="([^"]+\.js)"/g), ...html.matchAll(/<link rel="modulepreload"[^>]+href="([^"]+)"/g)].map((m) => m[1]));
+  for (const href of files) {
+    const file = join(root, 'dist', href);
+    if (existsSync(file)) jsBytes += gzipSync(readFileSync(file)).length;
+  }
+  // Small scripts are inlined into the page by the build; they count too.
+  for (const m of html.matchAll(/<script(?![^>]*(?:src=|type="application\/ld\+json"))[^>]*>([\s\S]*?)<\/script>/g)) jsBytes += gzipSync(m[1]).length;
+  if (jsBytes > 5 * 1024) problems.push(`the landing page loads ${jsBytes} bytes of gzipped JavaScript (budget 5 KB)`);
+  console.log(`landing: ${html.length} bytes of HTML, ${jsBytes} bytes of gzipped JavaScript`);
+}
+
 if (problems.length) {
   for (const p of problems) console.error(`  ERROR  ${p}`);
   process.exit(1);

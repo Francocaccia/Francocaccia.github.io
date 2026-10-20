@@ -229,3 +229,11 @@ main {
   align-items: center;
   min-height: 44px;
 }
+
+/* Page to page: a short cross-fade (Chrome and Safari; elsewhere an ordinary navigation). Both pages opt in with
+   this rule. No script, and none of it for visitors who asked for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}

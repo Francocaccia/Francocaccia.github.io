@@ -1,0 +1,22 @@
+---
+// Coding scene: a real function from this repo's C++ core, "typed" by a clip-path reveal over text that is
+// already in the page, and the real output of the shell's `projects` command.
+import TermLines from '../TermLines.astro';
+import type { codeExcerpt, terminalPreview } from '../../lib/landing-data';
+
+interface Props {
+  code: ReturnType<typeof codeExcerpt>;
+  term: Awaited<ReturnType<typeof terminalPreview>>['projects'];
+}
+
+const { code, term } = Astro.props;
+---
+
+<div class="panel code-panel">
+  <p class="file">{code.file}</p>
+  <pre class="code" tabindex="0" role="region" aria-label={`Source excerpt from ${code.file}`}><code>{code.lines.map((line, i) => <span class="code-line" style={`--l:${i}`}>{line + '\n'}</span>)}</code></pre>
+  <div class="mini-term" role="region" aria-label="Output of the projects command in the Terminal view">
+    <p class="prompt"><span class="ps">visitor@portfolio:~$</span> projects</p>
+    <div class="mini-out"><TermLines lines={term} /></div>
+  </div>
+</div>

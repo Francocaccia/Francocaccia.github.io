@@ -1,0 +1,65 @@
+---
+// The three views as doors: the quick, no-JavaScript way in. Each preview is made from the real thing:
+// candles from the C++ chart engine, the real `cat about.md` output of the shell, and the latest METAR.
+import { metarTokens } from '../../lib/metar-tokens';
+import { enabledModes } from '../../config';
+import { withBase } from '../../lib/site';
+import TermLines from '../TermLines.astro';
+import type { metarPreview } from '../../lib/landing-data';
+
+type Span = { t: string; k?: string; h?: string; c?: string };
+interface Props {
+  candles: string;
+  about: Span[][];
+  metar: ReturnType<typeof metarPreview>;
+}
+
+const { candles, about, metar } = Astro.props;
+const modes = enabledModes();
+const tokens = metarTokens(metar.raw);
+---
+
+<section class="views" id="views" aria-labelledby="views-h">
+  <div class="views-inner">
+    <h2 id="views-h">Choose how to read it</h2>
+    <p class="views-lead">The same facts, laid out three ways. Pick one; the switcher at the top right changes it any time.</p>
+    <ul class="doors">
+      {
+        modes.map((m) => (
+          <li>
+            <a class={`door door-${m.id}`} href={withBase(m.path)} data-mode={m.id}>
+              <span class="preview" aria-hidden="true">
+                {m.id === 'finance' && (
+                  <span class="pv pv-fin">
+                    <span class="pv-svg" set:html={candles} />
+                    <span class="pv-tag">Illustrative data</span>
+                  </span>
+                )}
+                {m.id === 'terminal' && (
+                  <span class="pv pv-term">
+                    <span class="pv-line"><span class="pv-ps">visitor@portfolio:~$</span> cat about.md</span>
+                    <span class="pv-out"><TermLines lines={about} /></span>
+                  </span>
+                )}
+                {m.id === 'aviation' && (
+                  <span class="pv pv-avi">
+                    <span class="pv-metar">{tokens.map((t) => <span class={`mt mt-${t.kind}`}>{t.text} </span>)}</span>
+                    <span class="pv-tag">{metar.label} · {metar.stamp}</span>
+                  </span>
+                )}
+              </span>
+              <span class="door-body">
+                <span class="door-name" id={`door-${m.id}-n`}>{m.label}</span>
+                <span class="door-promise" id={`door-${m.id}-p`}>{m.promise}</span>
+                <span class="inside-h">Inside</span>
+                <span class="inside-list">{m.inside.map((x) => <span class="inside-item">{x}</span>)}</span>
+                <span class="door-go" aria-hidden="true">Open {m.label}</span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="quick"><a href={withBase('/summary/')}>Quick view: summary and resume</a></p>
+  </div>
+</section>

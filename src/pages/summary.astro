@@ -2,20 +2,11 @@
 // Plain "Quick view": the same facts, no theme. Always available, readable without JavaScript.
 import GatewayLayout from '../layouts/GatewayLayout.astro';
 import { site, real, opt } from '../lib/site';
+import { personJsonLd } from '../lib/person-jsonld';
 
 const email = real(site.email);
 const resume = real(site.resume);
-
-const person = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: site.name,
-  description: `${site.positioning} ${site.openTo}`,
-  url: 'https://francocaccia.github.io/',
-  address: { '@type': 'PostalAddress', addressRegion: 'Pennsylvania', addressCountry: 'US' },
-  sameAs: [site.links.github, site.links.linkedin],
-};
-const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
+const personJson = personJsonLd();
 ---
 
 <GatewayLayout
