@@ -24,7 +24,6 @@ function start(root: HTMLElement) {
 
   const notice = fig.querySelector<HTMLElement>('[data-chart-notice]')!;
   const noticeText = fig.querySelector<HTMLElement>('[data-notice-text]')!;
-  const foot = fig.querySelector<HTMLElement>('[data-chart-foot]');
   const tableHost = fig.querySelector<HTMLElement>('[data-table-host]');
   const toggle = fig.querySelector<HTMLButtonElement>('[data-mix-toggle]')!;
 
@@ -36,10 +35,10 @@ function start(root: HTMLElement) {
   toggle.disabled = false;
   toggle.addEventListener('click', () => {
     const on = toggle.getAttribute('aria-pressed') !== 'true';
-    toggle.setAttribute('aria-pressed', String(on));
-    toggle.textContent = `60/40 line: ${on ? 'on' : 'off'}`;
+    toggle.setAttribute('aria-pressed', String(on)); // the label stays fixed; aria-pressed carries the state
     fig.dataset.mix = on ? 'on' : 'off';
   });
+  fig.dataset.ready = ''; // reveals the controls, which are hidden without JavaScript
 
   const setNotice = (state: 'loading' | 'warming' | 'live', text: string) => {
     notice.dataset.state = state;
@@ -80,7 +79,6 @@ function start(root: HTMLElement) {
       if (tableHost) tableHost.innerHTML = wide.table;
       setNotice('live', `Live data from the paper account: ${wide.n} trading days since ${wide.points[0]?.label ?? ''}.`);
       fig!.dataset.live = 'true';
-      if (foot) foot.textContent = 'Index points, 100 on the first day. Click or touch the chart, use the arrows, or press the left and right arrow keys.';
     } catch {
       warming();
     }
@@ -139,6 +137,10 @@ function createInspector(fig: HTMLElement, chart: HTMLElement) {
   }
 
   function render(i: number) {
+    if (pending !== undefined) {
+      clearTimeout(pending); // a newer choice beats a hover that has not settled yet
+      pending = undefined;
+    }
     const base = first();
     if (!base || !base.points.length) return;
     index = Math.max(0, Math.min(base.points.length - 1, i));
@@ -159,7 +161,7 @@ function createInspector(fig: HTMLElement, chart: HTMLElement) {
     steps.forEach((b) => (b.disabled = index + Number(b.dataset.step) < 0 || index + Number(b.dataset.step) > base.points.length - 1));
   }
 
-  // Hovering sweeps the days quickly, so the spoken update waits until the pointer rests.
+  // Hovering sweeps the days quickly: the sentence follows the pointer but is not spoken (keys, buttons and clicks are).
   function select(i: number, settle = false) {
     if (!settle) return render(i);
     if (pending !== undefined) clearTimeout(pending);
@@ -169,7 +171,12 @@ function createInspector(fig: HTMLElement, chart: HTMLElement) {
     if (!p) return;
     views.forEach((v) => mark(v, target));
     index = target;
-    pending = window.setTimeout(() => render(target), 140);
+    // Live announcements are paused while the hover sentence updates, so a sweep is not read out day by day.
+    readout.setAttribute('aria-live', 'off');
+    pending = window.setTimeout(() => {
+      render(target);
+      window.setTimeout(() => readout.setAttribute('aria-live', 'polite'), 300);
+    }, 140);
   }
 
   function nearest(event: PointerEvent): number | null {

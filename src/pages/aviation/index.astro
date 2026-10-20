@@ -114,64 +114,66 @@ const resume = real(site.resume);
           </ul>
         </div>
 
-        <!-- Items 13, 15, 16 -->
-        <div class="cell c4">
-          <p class="lbl"><span class="no">13</span> Departure aerodrome</p>
-          <p class="val">{departure.icao}</p>
-          <p class="sub">{departure.name}<br />{departure.role.toUpperCase()}</p>
+        <!-- Items 13 and 16 stacked on the left, items 15 and the chart on the right -->
+        <div class="cell c4 stackcell">
+          <div class="sub-cell">
+            <p class="lbl"><span class="no">13</span> Departure aerodrome</p>
+            <p class="val">{departure.icao}</p>
+            <p class="sub">{departure.name}<br />{departure.role.toUpperCase()} · {fmtLat(departure.lat)} {fmtLon(departure.lon)}, APPROX.</p>
+          </div>
+          <div class="sub-cell">
+            <p class="lbl"><span class="no">16</span> Destination aerodrome</p>
+            <p class="val">{destination.icao}</p>
+            <p class="sub">{destination.name}<br />{destination.role.toUpperCase()} · {fmtLat(destination.lat)} {fmtLon(destination.lon)}, APPROX.</p>
+          </div>
+          <div class="sub-cell">
+            <p class="lbl"><span class="no">15</span> Route legs</p>
+            <div class="scroll" tabindex="0" role="region" aria-label="Route legs table">
+              <table class="legs">
+                <caption>Great-circle legs (haversine). Course is the initial true course.</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Leg</th>
+                    <th scope="col" class="num">Distance</th>
+                    <th scope="col" class="num">True course</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {
+                    routeWide.legs.map((l) => (
+                      <tr>
+                        <th scope="row">{l.from} to {l.to}</th>
+                        <td class="num">{nm(l.nm)} NM</td>
+                        <td class="num">{course(l.course)}°</td>
+                      </tr>
+                    ))
+                  }
+                  <tr class="total">
+                    <th scope="row">Total</th>
+                    <td class="num">{nm(routeWide.totalNm)} NM</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
         <div class="cell c8">
           <p class="lbl"><span class="no">15</span> Route</p>
           <p class="val route">{routeString}</p>
-          <div class="scroll" tabindex="0" role="region" aria-label="Route legs table">
-            <table class="legs">
-              <caption>Great-circle legs (haversine). Course is the initial true course.</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Leg</th>
-                  <th scope="col" class="num">Distance</th>
-                  <th scope="col" class="num">True course</th>
-                </tr>
-              </thead>
-              <tbody>
-                {
-                  routeWide.legs.map((l) => (
-                    <tr>
-                      <th scope="row">{l.from} to {l.to}</th>
-                      <td class="num">{nm(l.nm)} NM</td>
-                      <td class="num">{course(l.course)}°</td>
-                    </tr>
-                  ))
-                }
-                <tr class="total">
-                  <th scope="row">Total route length</th>
-                  <td class="num">{nm(routeWide.totalNm)} NM</td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="rv map">
+            <div class="rv-wide" set:html={routeWide.svg} />
+            <div class="rv-narrow" set:html={routeNarrow.svg} />
           </div>
           <ul class="aprts">
             {
               site.airports.map((a) => (
                 <li>
-                  <span class="code">{a.icao}</span> {a.name} <span class="muted">({a.role}) {fmtLat(a.lat)} {fmtLon(a.lon)}, approx.</span>
+                  <span class="code">{a.icao}</span> {a.name} <span class="muted">({a.role})</span>
                 </li>
               ))
             }
           </ul>
-        </div>
-        <div class="cell c4">
-          <p class="lbl"><span class="no">16</span> Destination aerodrome</p>
-          <p class="val">{destination.icao}</p>
-          <p class="sub">{destination.name}<br />{destination.role.toUpperCase()}</p>
-        </div>
-        <div class="cell c8">
-          <p class="lbl">Route chart</p>
-          <div class="rv map">
-            <div class="rv-wide" set:html={routeWide.svg} />
-            <div class="rv-narrow" set:html={routeNarrow.svg} />
-          </div>
         </div>
       </div>
 
@@ -234,7 +236,7 @@ const resume = real(site.resume);
       </div>
 
       <!-- Item 18: experience -->
-      <h2 class="band"><span class="no">18</span> Other information · Experience</h2>
+      <h2 class="band"><span class="no">18 CONT.</span> Other information · Experience</h2>
       <div class="grid">
         {
           site.experience.map((e) => (
@@ -253,12 +255,12 @@ const resume = real(site.resume);
       <h2 class="band"><span class="no">19</span> Supplementary information</h2>
       <div class="grid">
         <div class="cell c4">
-          <p class="lbl"><span class="no">19</span> Pilot in command</p>
+          <p class="lbl"><span class="no">19/PIC</span> Pilot in command</p>
           <p class="val upper">{site.name}</p>
           {flightHours && <p class="sub">TOTAL TIME {flightHours.toUpperCase()}</p>}
         </div>
         <div class="cell c8">
-          <p class="lbl"><span class="no">19</span> Licenses and ratings</p>
+          <p class="lbl"><span class="no">19/LIC</span> Licenses and ratings</p>
           <ul class="licenses">
             {
               site.certifications.map((c) => (
@@ -274,13 +276,13 @@ const resume = real(site.resume);
           </ul>
         </div>
         <div class="cell c4">
-          <p class="lbl"><span class="no">19</span> Languages</p>
+          <p class="lbl"><span class="no">19/LNG</span> Languages</p>
           <ul class="plain">
             {site.languages.map((l) => <li><span class="code">{l.name.toUpperCase()}</span> <span class="muted">{l.level}</span></li>)}
           </ul>
         </div>
         <div class="cell c8">
-          <p class="lbl"><span class="no">19</span> Education</p>
+          <p class="lbl"><span class="no">19/EDU</span> Education</p>
           <ul class="plain">
             {
               site.education.map((e) => (
@@ -355,6 +357,7 @@ const resume = real(site.resume);
               spellcheck="false"
               autocapitalize="characters"
               autocomplete="off"
+              maxlength="20000"
               placeholder="KABE 181451Z 00000KT 10SM CLR 09/M01 A3062"
               disabled
               data-paste-input></textarea>

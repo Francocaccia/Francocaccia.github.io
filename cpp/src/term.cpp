@@ -17,6 +17,8 @@ namespace {
 constexpr const char* kUser = "visitor";
 constexpr const char* kHome = "/home/franco";
 constexpr std::size_t kCols = 44;  // layout width that still fits a 390px phone
+constexpr std::size_t kMaxLineChars = 1000;  // longer command lines are refused before parsing
+constexpr std::size_t kMaxOutputLines = 2000;  // one command never prints more than this
 
 // ---------------------------------------------------------------- output model
 
@@ -29,6 +31,10 @@ Span S(std::string text, std::string kind = "") { return {std::move(text), std::
 
 // Only these schemes may become links; anything else stays plain text.
 bool safeHref(const std::string& h) {
+  for (char ch : h) {
+    unsigned char u = static_cast<unsigned char>(ch);
+    if (ch == '\\' || u < 0x20 || u == 0x7f) return false;
+  }
   if (h.rfind("https://", 0) == 0 || h.rfind("mailto:", 0) == 0) return true;
   return h.size() > 1 && h[0] == '/' && h[1] != '/';
 }
@@ -36,6 +42,22 @@ bool safeHref(const std::string& h) {
 Span LINK(std::string label, std::string href) {
   if (!safeHref(href)) return S(std::move(label));
   return {std::move(label), "link", std::move(href), ""};
+}
+
+// Quotes a word the way the shell's tokenizer reads it back: bare unless it holds a space, quote or
+// backslash (or is empty), otherwise in double quotes with backslash and quote escaped.
+std::string shellQuote(const std::string& s) {
+  bool plain = !s.empty();
+  for (char ch : s) {
+    if (std::isspace(static_cast<unsigned char>(ch)) || ch == '"' || ch == '\'' || ch == '\\') plain = false;
+  }
+  if (plain) return s;
+  std::string out = "\"";
+  for (char ch : s) {
+    if (ch == '"' || ch == '\\') out += '\\';
+    out += ch;
+  }
+  return out + "\"";
 }
 
 // A clickable command: shows `label`, runs `command` (defaults to the label).
@@ -100,9 +122,19 @@ struct Out {
   std::vector<Line> lines;
   std::vector<Json> actions;
 
-  void add(Line l) { lines.push_back(std::move(l)); }
-  void text(const std::string& s, const std::string& kind = "") { lines.push_back({S(s, kind)}); }
-  void blank() { lines.emplace_back(); }
+  bool truncated = false;
+
+  // Lines past the cap are dropped; Term::exec closes the output with a notice.
+  void push(Line l) {
+    if (lines.size() >= kMaxOutputLines) {
+      truncated = true;
+      return;
+    }
+    lines.push_back(std::move(l));
+  }
+  void add(Line l) { push(std::move(l)); }
+  void text(const std::string& s, const std::string& kind = "") { push({S(s, kind)}); }
+  void blank() { push({}); }
   void error(const std::string& s) { text(s, "error"); }
   void action(const std::string& type, const std::string& key = "", const std::string& value = "") {
     Json a = Json::object();
@@ -647,7 +679,7 @@ void listDir(Ctx& c, const Node& dir, const Path& at) {
     std::string label = n.name + (n.kind == Node::Kind::Dir ? "/" : n.kind == Node::Kind::Link ? "@" : "");
     Path full = at;
     full.push_back(n.name);
-    std::string command = (n.kind == Node::Kind::Dir ? "ls " : "cat ") + display(full);
+    std::string command = (n.kind == Node::Kind::Dir ? "ls " : "cat ") + shellQuote(display(full));
     row.push_back(CMD(label, command));
     if (width > label.size()) row.push_back(S(std::string(width - label.size(), ' ')));
     if (++inRow == perLine) {
@@ -663,7 +695,7 @@ void listDir(Ctx& c, const Node& dir, const Path& at) {
 void reportMissing(Ctx& c, const std::string& command, const std::string& arg, const Loose& r, const std::string& noun) {
   if (!r.ambiguous.empty()) {
     c.out.error(command + ": '" + arg + "' matches more than one name. Which one?");
-    for (const std::string& p : r.ambiguous) c.out.add({S("  "), CMD(p, command + " " + p)});
+    for (const std::string& p : r.ambiguous) c.out.add({S("  "), CMD(p, command + " " + shellQuote(p))});
     return;
   }
   c.out.error(command + ": no such " + noun + " '" + arg + "'. Try: ls");
@@ -692,7 +724,7 @@ void cmdLs(Ctx& c, const std::vector<std::string>& a) {
     if (n->kind == Node::Kind::Dir) {
       listDir(c, *n, p);
     } else {
-      c.out.add({CMD(n->name, "cat " + display(p))});
+      c.out.add({CMD(n->name, "cat " + shellQuote(display(p)))});
     }
   }
   if (a.empty() || a.size() == targets.size()) {
@@ -716,7 +748,7 @@ void cmdCd(Ctx& c, const std::vector<std::string>& a) {
   const Node* n = nodeAt(c.root, p);
   if (n->kind != Node::Kind::Dir) {
     c.out.error("cd: '" + arg + "' is a file, not a folder.");
-    c.out.add({S("Read it with: ", "dim"), CMD("cat " + arg)});
+    c.out.add({S("Read it with: ", "dim"), CMD("cat " + shellQuote(arg))});
     return;
   }
   c.cwd = p;
@@ -770,7 +802,7 @@ void cmdCat(Ctx& c, const std::vector<std::string>& a) {
     const Node* n = nodeAt(c.root, r.path);
     if (n->kind == Node::Kind::Dir) {
       c.out.error("cat: '" + a[i] + "' is a folder, not a file.");
-      c.out.add({S("List it with: ", "dim"), CMD("ls " + display(r.path))});
+      c.out.add({S("List it with: ", "dim"), CMD("ls " + shellQuote(display(r.path)))});
       continue;
     }
     if (a.size() > 1) c.out.text("--- " + a[i], "dim");
@@ -786,7 +818,7 @@ void drawTree(const Node& dir, const Path& at, const std::string& prefix, std::v
     Path full = at;
     full.push_back(n.name);
     std::string label = n.name + (n.kind == Node::Kind::Dir ? "/" : n.kind == Node::Kind::Link ? "@" : "");
-    lines.push_back({S(prefix + (last ? "`-- " : "|-- ")), CMD(label, (n.kind == Node::Kind::Dir ? "ls " : "cat ") + display(full))});
+    lines.push_back({S(prefix + (last ? "`-- " : "|-- ")), CMD(label, (n.kind == Node::Kind::Dir ? "ls " : "cat ") + shellQuote(display(full)))});
     if (n.kind == Node::Kind::Dir) drawTree(n, full, prefix + (last ? "    " : "|   "), lines);
   }
 }
@@ -849,7 +881,7 @@ void cmdGrep(Ctx& c, const std::vector<std::string>& args) {
       if (++hits > kMaxHits) continue;
       std::size_t from = pos > 24 ? pos - 24 : 0;
       std::size_t to = std::min(line.size(), pos + needle.size() + 32);
-      Line row = {CMD(f.first, "cat " + f.first), S(":" + std::to_string(lineNo) + ": ", "dim")};
+      Line row = {CMD(f.first, "cat " + shellQuote(f.first)), S(":" + std::to_string(lineNo) + ": ", "dim")};
       if (from > 0) row.push_back(S("...", "dim"));
       row.push_back(S(line.substr(from, pos - from)));
       row.push_back(S(line.substr(pos, needle.size()), "match"));
@@ -860,7 +892,7 @@ void cmdGrep(Ctx& c, const std::vector<std::string>& args) {
   }
   if (hits == 0) {
     c.out.text("No matches for '" + text + "'.", "dim");
-    if (otherCase > 0) c.out.add({S("It does appear with other capitals. Try: ", "dim"), CMD("grep -i " + text)});
+    if (otherCase > 0) c.out.add({S("It does appear with other capitals. Try: ", "dim"), CMD("grep -i " + shellQuote(text))});
     else c.out.text("Try a shorter word, for example: grep -i go", "dim");
     return;
   }
@@ -1243,7 +1275,9 @@ Json Term::exec(const std::string& line, const std::string& cwd, const std::vect
 
   std::vector<std::string> args;
   std::string error;
-  if (!tokenize(line, args, error)) {
+  if (line.size() > kMaxLineChars) {
+    c.out.error("Command too long.");
+  } else if (!tokenize(line, args, error)) {
     c.out.error("Could not read that: " + error + ".");
   } else if (!args.empty()) {
     std::string name = lower(args[0]);
@@ -1265,6 +1299,7 @@ Json Term::exec(const std::string& line, const std::string& cwd, const std::vect
     }
   }
 
+  if (c.out.truncated) c.out.lines.push_back({S("Output truncated at " + std::to_string(kMaxOutputLines) + " lines.", "dim")});
   Json out = Json::object();
   out.set("lines", linesToJson(c.out.lines));
   Json actions = Json::array();
@@ -1375,7 +1410,7 @@ Out statsBlock(const Json& raw, bool placeholder, const std::string& trackingSin
     bool hasValue = live && t.at("value").isNumber();
     std::string tone = t.at("tone").asString();
     out.add({S("  " + pad(t.at("label").asString(), 14), "dim"),
-             S(hasValue ? t.at("text").asString() : "[+x.x%]", hasValue ? (tone == "pos" ? "pos" : tone == "neg" ? "neg" : "") : "dim")});
+             S(hasValue ? t.at("text").asString() : (t.at("id").asString() == "max_drawdown" ? "[-x.x%]" : "[+x.x%]"), hasValue ? (tone == "pos" ? "pos" : tone == "neg" ? "neg" : "") : "dim")});
   }
   if (placeholder) {
     out.text("Waking up the bot. The free host can take about a minute.", "dim");

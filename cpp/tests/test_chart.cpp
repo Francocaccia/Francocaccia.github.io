@@ -1,9 +1,12 @@
 #include <algorithm>
+#include <cmath>
+#include <cstdio>
 
 #include "fc/api.hpp"
 #include "fc/chart.hpp"
 #include "fc/json.hpp"
 #include "test.hpp"
+#include "../src/clamp.hpp"
 
 using fc::Candle;
 using fc::Json;
@@ -285,4 +288,96 @@ TEST(chart_end_labels_are_dropped_when_lines_converge) {
   CHECK(contains(svg, ">Bot "));
   CHECK(!contains(svg, ">SPY "));
   CHECK(!contains(svg, ">60/40 "));
+}
+
+namespace {
+
+// n valid, strictly increasing dates (28 days a month) with a rising bot, SPY and 60/40.
+std::string longFeed(int n) {
+  std::string out = "[";
+  for (int i = 0; i < n; ++i) {
+    char row[160];
+    std::snprintf(row, sizeof row, R"(%s{"date":"%04d-%02d-%02d","c":%.2f,"spy":%.2f,"mix_60_40":%.2f})", i ? "," : "",
+                  2000 + i / 336, (i / 28) % 12 + 1, i % 28 + 1, 100.0 + i * 0.2, 100.0 + i * 0.1, 100.0 + i * 0.05);
+    out += row;
+  }
+  return out + "]";
+}
+
+}  // namespace
+
+TEST(chart_parse_reindexes_to_100_when_old_days_are_trimmed) {
+  std::vector<Candle> series;
+  std::string error;
+  CHECK(fc::parseHistory(parse(longFeed(450)), series, error));
+  CHECK_EQ(series.size(), std::size_t(400));
+  CHECK_EQ(series.front().label, parse(longFeed(450)).at(50).at("date").asString());
+  CHECK_EQ(series.front().c, 100.0);
+  CHECK_EQ(series.front().o, 100.0);
+  CHECK_EQ(series.front().spy, 100.0);
+  CHECK_EQ(series.front().mix, 100.0);
+  // Day 449 of the feed: 189.80 / 110.00, 144.90 / 105.00, 122.45 / 102.50.
+  CHECK_EQ(series.back().c, 172.55);
+  CHECK_EQ(series.back().spy, 138.00);
+  CHECK_EQ(series.back().mix, 119.46);
+  for (const Candle& c : series) CHECK(c.h >= std::max(c.o, c.c) && c.l <= std::min(c.o, c.c));
+
+  // A feed that fits is left exactly as it came.
+  CHECK(fc::parseHistory(parse(longFeed(400)), series, error));
+  CHECK_EQ(series.front().c, 100.0);
+  CHECK_EQ(series.back().c, 179.8);
+  CHECK_EQ(series.back().spy, 139.9);
+}
+
+TEST(chart_parse_rejects_impossible_calendar_dates) {
+  std::vector<Candle> series;
+  std::string error;
+  auto feed = [](const char* first) {
+    return parse(std::string(R"([{"date":")") + first + R"(","c":100,"spy":100,"mix_60_40":100},
+                  {"date":"2030-01-01","c":100,"spy":100,"mix_60_40":100}])");
+  };
+  for (const char* bad : {"2026-02-31", "2026-04-31", "2026-02-29", "2100-02-29", "2026-06-31", "2026-00-10", "2026-13-01", "2026-01-00"}) {
+    CHECK(!fc::parseHistory(feed(bad), series, error));
+  }
+  for (const char* good : {"2026-02-28", "2028-02-29", "2000-02-29", "2026-04-30", "2026-12-31"}) {
+    CHECK(fc::parseHistory(feed(good), series, error));
+  }
+}
+
+TEST(chart_api_survives_numbers_outside_the_integer_range) {
+  for (const char* in : {R"({"days":1e20,"seed":-5})", R"({"days":-1e20,"seed":1e30})", R"({"days":1e999,"seed":1e999,"width":1e999,"height":-1e999})",
+                         R"({"days":"x","seed":null,"width":1e30,"height":-1e30,"excessHeight":1e30})"}) {
+    Json reply = parse(fc::call("chart.illustrative", in));
+    CHECK(reply.at("ok").asBool());
+    double n = reply.at("result").at("n").asNumber();
+    CHECK(n >= 2.0 && n <= 400.0);
+  }
+  Json big = parse(fc::call("chart.illustrative", R"({"days":1e20})"));
+  CHECK_EQ(big.at("result").at("n").asNumber(), 400.0);
+  Json small = parse(fc::call("chart.illustrative", R"({"days":-7})"));
+  CHECK_EQ(small.at("result").at("n").asNumber(), 2.0);
+
+  // A negative seed clamps to 0, a huge one to the largest 32-bit seed, and both are repeatable.
+  auto first = [](const char* in) {
+    return parse(fc::call("chart.illustrative", in)).at("result").at("points").at(5).at("c").asNumber();
+  };
+  CHECK_EQ(first(R"({"seed":-5})"), first(R"({"seed":0})"));
+  CHECK_EQ(first(R"({"seed":1e30})"), first(R"({"seed":4294967295})"));
+  CHECK_EQ(first(R"({"seed":1e30})"), first(R"({"seed":1e30})"));
+
+  // Sizes are clamped, and a missing size keeps its default.
+  Json wide = parse(fc::call("chart.illustrative", R"({"width":1e30,"height":1e30,"days":5})"));
+  CHECK_EQ(wide.at("result").at("plot").at("w").asNumber(), 1600.0);
+  CHECK_EQ(wide.at("result").at("plot").at("h").asNumber(), 1200.0);
+  Json other = parse(fc::call("geo.route", R"({"airports":[{"icao":"A","name":"a","lat":0,"lon":0},{"icao":"B","name":"b","lat":10,"lon":10}],"width":1e30,"height":-1e30})"));
+  CHECK(other.at("ok").asBool());
+}
+
+TEST(chart_clamp_number_maps_nan_to_the_fallback) {
+  double nan = std::nan("");
+  CHECK_EQ(fc::clampNumber(nan, 120, 1600, 720), 720.0);
+  CHECK_EQ(fc::clampNumber(1e300, 120, 1600, 720), 1600.0);
+  CHECK_EQ(fc::clampNumber(-1e300, 120, 1600, 720), 120.0);
+  CHECK_EQ(fc::clampNumber(500, 120, 1600, 720), 500.0);
+  CHECK_EQ(static_cast<int>(fc::clampNumber(nan, 0, 300, 0)), 0);
 }

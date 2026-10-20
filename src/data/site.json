@@ -109,11 +109,11 @@
   "coursework": ["Artificial Intelligence", "Machine Learning", "Data Structures", "Databases", "Operating Systems", "Architecture & Assembly", "Applied Regression", "Accounting", "Business Statistics", "Investment Fundamentals", "Finance"],
 
   "certifications": [
-    { "name": "Commercial Pilot + Instrument Rating", "issuer": "ANAC (Argentina)", "status": "active", "track": "aviation", "detail": "220+ flight hours" },
+    { "name": "Commercial Pilot + Instrument Rating", "issuer": "ANAC, Argentina", "status": "active", "track": "aviation", "detail": "220+ flight hours" },
     { "name": "Commercial Pilot", "issuer": "FAA", "status": "in-progress", "track": "aviation" },
     { "name": "Flight Dispatcher", "status": "in-progress", "track": "aviation", "detail": "Since January 2026" },
     { "name": "Restricted Radiotelephone Operator", "issuer": "FCC", "status": "active", "track": "aviation" },
-    { "name": "Bloomberg Market Concepts", "issuer": "Bloomberg", "status": "complete", "track": "finance", "detail": "April 2026" }
+    { "name": "Bloomberg Market Concepts", "status": "complete", "track": "finance", "detail": "April 2026" }
   ],
 
   "languages": [

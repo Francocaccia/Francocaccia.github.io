@@ -10,6 +10,9 @@ interface ExecResult {
   cwd: string;
 }
 
+const MAX_LINE = 1000; // matches the shell's own limit
+const MAX_HISTORY = 100; // the history is sent with every command
+
 const root = document.querySelector<HTMLElement>('[data-term]');
 if (root) void start(root);
 
@@ -149,21 +152,26 @@ async function start(root: HTMLElement) {
       echo(line);
       return printText('Still waiting for the bot. Press Ctrl+C to cancel.', 'dim');
     }
-    echo(line);
+    echo(line.length > MAX_LINE ? `${line.slice(0, MAX_LINE)}...` : line);
     const trimmed = line.trim();
     if (trimmed) {
-      if (history[history.length - 1] !== trimmed) history.push(trimmed);
+      if (history[history.length - 1] !== trimmed) history.push(trimmed.slice(0, MAX_LINE));
+      if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
       historyIndex = history.length;
       draft = '';
-      const result = await coreCall<ExecResult>('term.exec', {
-        line,
-        cwd,
-        history,
-        now: Math.floor(Date.now() / 1000),
-      });
-      print(result.lines);
-      setCwd(result.cwd);
-      for (const action of result.actions) await handle(action);
+      try {
+        const result = await coreCall<ExecResult>('term.exec', {
+          line: line.slice(0, MAX_LINE + 1),
+          cwd,
+          history,
+          now: Math.floor(Date.now() / 1000),
+        });
+        print(result.lines);
+        setCwd(result.cwd);
+        for (const action of result.actions) await handle(action);
+      } catch {
+        printText('That command could not run.', 'error');
+      }
     }
     scrollToEnd();
   }
@@ -235,6 +243,8 @@ async function start(root: HTMLElement) {
       event.preventDefault();
       clearScreen();
     } else if ((event.ctrlKey && event.key.toLowerCase() === 'c') || event.key === 'Escape') {
+      const copying = event.key !== 'Escape' && input.selectionStart !== input.selectionEnd;
+      if (copying && !pending) return; // Ctrl+C with selected text is a copy, not an interrupt
       if (pending) {
         event.preventDefault();
         userAborted = true;
@@ -288,5 +298,7 @@ async function start(root: HTMLElement) {
   root.dataset.ready = '';
   setCwd('~');
   if (fineCursor) input.focus({ preventScroll: true });
-  void refreshStatsBlock();
+  void refreshStatsBlock().catch(() => {
+    /* the first-screen placeholders stay */
+  });
 }

@@ -571,3 +571,93 @@ TEST(term_api_round_trip) {
   Json bad = parse(fc::call("term.init", R"({"site":"nope"})"));
   CHECK(!bad.at("ok").asBool());
 }
+
+TEST(term_refuses_a_command_line_longer_than_1000_characters) {
+  fc::Term t = makeTerm();
+  Run edge = run(t, "echo " + std::string(995, 'a'));  // exactly 1000
+  CHECK_EQ(edge.text(), std::string(995, 'a') + "\n");
+  Run r = run(t, "echo " + std::string(996, 'a'));
+  CHECK_EQ(r.text(), std::string("Command too long.\n"));
+  CHECK(r.span("error") != nullptr);
+  // The check comes before parsing, so an unclosed quote in a long line gets the same answer.
+  CHECK_EQ(run(t, "echo \"" + std::string(2000, 'a')).text(), std::string("Command too long.\n"));
+  std::string many;
+  for (int i = 0; i < 5000; ++i) many += "cat README.md ";
+  CHECK_EQ(run(t, many).text(), std::string("Command too long.\n"));
+}
+
+TEST(term_caps_one_commands_output_at_2000_lines) {
+  fc::Term t = makeTerm();
+  std::size_t one = run(t, "cat README.md").result.at("lines").items().size();
+  CHECK(one > 10);
+  // As many copies as fit on one line.
+  std::string line = "cat";
+  std::size_t copies = 0;
+  while (line.size() + 10 <= 1000) line += " README.md", ++copies;
+  Run r = run(t, line);
+  const Json& lines = r.result.at("lines");
+  CHECK(copies * one > 2000);
+  CHECK_EQ(lines.items().size(), std::size_t(2001));
+  const Json& last = lines.at(2000);
+  CHECK_EQ(last.at(0).at("t").asString(), std::string("Output truncated at 2000 lines."));
+  CHECK_EQ(last.at(0).at("k").asString(), std::string("dim"));
+  CHECK(!has(run(t, "cat README.md").text(), "Output truncated"));
+}
+
+TEST(term_clickable_commands_quote_arguments_so_a_click_runs_the_same_command) {
+  fc::Term t = makeTerm();
+  Run miss = run(t, "grep \"python pipelines\"");
+  CHECK(has(miss.text(), "No matches for 'python pipelines'"));
+  std::string clicked;
+  for (const Json& l : miss.result.at("lines").items()) {
+    for (const Json& s : l.items()) {
+      if (s.at("k").asString() == "cmd") clicked = s.at("c").asString();
+    }
+  }
+  CHECK_EQ(clicked, std::string("grep -i \"python pipelines\""));
+  Run again = run(t, clicked);
+  CHECK(!has(again.text(), "No matches"));
+  CHECK(has(again.text(), "matches in"));
+  CHECK(has(again.text(), "~/experience/lehigh.md"));
+
+  // A word without spaces stays bare, so the usual hint reads as before.
+  CHECK(has(run(t, "grep python").text(), "Try: grep -i python"));
+  // Quotes and backslashes in the text are escaped, not passed through.
+  Run odd = run(t, "grep 'a\"b\\c d'");
+  CHECK(has(odd.text(), "No matches"));
+  for (const Json& l : odd.result.at("lines").items()) {
+    for (const Json& s : l.items()) CHECK(s.at("k").asString() != "cmd");  // nothing found in another case, so no hint
+  }
+}
+
+TEST(term_hrefs_with_backslashes_or_control_characters_never_become_links) {
+  fc::Term t = makeTerm();
+  auto githubLink = [](const char* href) {
+    Json site = parse(kSite);
+    Json links = site.at("links");
+    links.set("github", href);
+    site.set("links", links);
+    fc::Term t(site, fc::TermOptions{});
+    return run(t, "open github").span("link") != nullptr;
+  };
+  CHECK(githubLink("https://example.com/ok"));
+  CHECK(!githubLink("https://example.com/a\\b"));
+  CHECK(!githubLink("https://example.com/a\x01" "b"));
+  CHECK(!githubLink("https://example.com/a\x7f" "b"));
+  CHECK(!githubLink("mailto:x@y.z\\evil"));
+
+  // The resume path comes from the data: only a plain site path is clickable.
+  auto resumeLink = [](const char* resume) {
+    Json site = parse(kSite);
+    site.set("resume", resume);
+    fc::TermOptions o;
+    fc::Term t(site, o);
+    return run(t, "open resume").span("link") != nullptr;
+  };
+  CHECK(resumeLink("/resume.pdf"));
+  CHECK(!resumeLink("/\\evil.example/x"));
+  CHECK(!resumeLink("//evil.example/x"));
+  CHECK(!resumeLink("/a\\b"));
+  CHECK(!resumeLink("/a\x01" "b"));
+  CHECK(!resumeLink("/a\tb"));
+}

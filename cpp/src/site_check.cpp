@@ -22,6 +22,35 @@ bool startsWith(const std::string& s, const char* prefix) {
   return s.compare(0, p.size(), p) == 0;
 }
 
+// Placeholder text: "TODO..." in any case, optionally after spaces or a "[", or the bare word TBD.
+bool isPlaceholder(const std::string& s) {
+  std::size_t from = s.find_first_not_of(" \t[");
+  if (from == std::string::npos) return false;
+  std::string rest = lower(s.substr(from));
+  if (rest.compare(0, 4, "todo") == 0) return true;
+  std::size_t to = rest.find_last_not_of(" \t]");
+  return rest.substr(0, to + 1) == "tbd";
+}
+
+// A "$" followed by an optional space and a digit, which reads as a money amount.
+bool hasDollarAmount(const std::string& s) {
+  for (std::size_t i = s.find('$'); i != std::string::npos; i = s.find('$', i + 1)) {
+    std::size_t j = i + 1;
+    while (j < s.size() && (s[j] == ' ' || s[j] == '\t')) ++j;
+    if (j < s.size() && s[j] >= '0' && s[j] <= '9') return true;
+  }
+  return false;
+}
+
+// Matches ^[a-z0-9][a-z0-9-]*$.
+bool isSlug(const std::string& s) {
+  if (s.empty() || s[0] == '-') return false;
+  for (char ch : s) {
+    if (!((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '-')) return false;
+  }
+  return true;
+}
+
 class Checker {
  public:
   explicit Checker(const std::vector<std::string>& terms) {
@@ -57,6 +86,25 @@ class Checker {
     return v;
   }
 
+  // Errors on any string value under `node` that holds a dollar amount (the text is never echoed).
+  void noDollars(const Json& node, const std::string& path) {
+    if (node.isString()) {
+      if (hasDollarAmount(node.asString())) error(path, "dollar amounts must not appear here");
+      return;
+    }
+    std::size_t i = 0;
+    for (const Json& item : node.items()) noDollars(item, path + "[" + std::to_string(i++) + "]");
+    for (const auto& m : node.members()) noDollars(m.second, path + "." + m.first);
+  }
+
+  // A required string that must also start with `prefix`.
+  void needPrefix(const Json& parent, const std::string& path, const char* key, const char* prefix) {
+    const Json* v = need(parent, path, key, Json::Type::String);
+    if (v && !startsWith(v->asString(), prefix)) {
+      error(path.empty() ? key : path + "." + key, std::string("must start with ") + prefix);
+    }
+  }
+
   void oneOf(const Json& node, const std::string& path, const char* key,
              std::initializer_list<const char*> allowed) {
     const Json* v = need(node, path, key, Json::Type::String);
@@ -72,7 +120,7 @@ class Checker {
     switch (node.type()) {
       case Json::Type::String: {
         const std::string& s = node.asString();
-        if (startsWith(s, "TODO")) warn(path, "placeholder still present: " + s);
+        if (isPlaceholder(s)) warn(path, "placeholder still present: " + s);
         scanText(s, path);
         break;
       }
@@ -128,9 +176,9 @@ void checkArrayOfObjects(Checker& c, const Json& site, const char* key,
 
 // Keys that would reveal positions or amounts, which the bot section must never carry.
 bool isForbiddenBotKey(const std::string& key) {
-  static const char* const names[] = {"positions", "holdings", "shares",  "quantity",
-                                      "balance",   "equity",   "cash",    "orders",
-                                      "symbols",   "tickers",  "notional"};
+  static const char* const names[] = {"positions", "holdings", "shares",  "quantity", "balance",  "equity",
+                                      "cash",      "orders",   "symbols", "tickers",  "notional", "position",
+                                      "pnl",       "amount",   "holding"};
   std::string k = lower(key);
   for (const char* n : names) {
     if (k == n) return true;
@@ -143,6 +191,7 @@ void checkBot(Checker& c, const Json& bot) {
       [&](const Json& node, const std::string& path) {
         for (const auto& m : node.members()) {
           std::string here = path + "." + m.first;
+          if (here == "bot.exampleDecision") continue;  // an illustration of the model's reply, with its own keys
           if (isForbiddenBotKey(m.first)) {
             c.error(here, "positions, amounts and symbols must not appear in bot data");
           }
@@ -152,9 +201,12 @@ void checkBot(Checker& c, const Json& bot) {
         for (const Json& item : node.items()) walk(item, path + "[" + std::to_string(i++) + "]");
       };
   walk(bot, "bot");
+  for (const auto& m : bot.members()) {
+    if (m.first != "exampleDecision") c.noDollars(m.second, "bot." + m.first);
+  }
 
   c.need(bot, "bot", "trackingSince", Json::Type::String);
-  c.need(bot, "bot", "apiBase", Json::Type::String);
+  c.needPrefix(bot, "bot", "apiBase", "https://");
   c.need(bot, "bot", "statsPath", Json::Type::String);
   c.need(bot, "bot", "historyPath", Json::Type::String);
   c.need(bot, "bot", "historyLive", Json::Type::Bool);
@@ -211,6 +263,13 @@ std::vector<Issue> checkSite(const Json& site, const std::vector<std::string>& f
   for (const char* key : {"name", "location", "positioning", "openTo", "email", "resume", "photo", "footer"}) {
     c.need(site, "", key, Json::Type::String);
   }
+  if (const Json* resume = site.find("resume")) {
+    // A path on this site; a TODO placeholder is already a warning.
+    const std::string& r = resume->asString();
+    if (resume->isString() && !r.empty() && !isPlaceholder(r) && (r[0] != '/' || startsWith(r, "//"))) {
+      c.error("resume", "must be a path on this site, starting with a single /");
+    }
+  }
   for (const char* key : {"technicalSkills", "coursework"}) {
     if (const Json* list = c.need(site, "", key, Json::Type::Array)) {
       if (list->items().empty()) c.error(key, "must not be empty");
@@ -222,22 +281,38 @@ std::vector<Issue> checkSite(const Json& site, const std::vector<std::string>& f
     }
   }
   if (const Json* links = c.need(site, "", "links", Json::Type::Object)) {
-    c.need(*links, "links", "github", Json::Type::String);
-    c.need(*links, "links", "linkedin", Json::Type::String);
+    c.needPrefix(*links, "links", "github", "https://");
+    c.needPrefix(*links, "links", "linkedin", "https://");
   }
 
+  std::vector<std::string> projectIds;
   checkArrayOfObjects(c, site, "projects", [&](const Json& p, const std::string& path) {
-    c.need(p, path, "id", Json::Type::String);
+    if (const Json* id = c.need(p, path, "id", Json::Type::String)) {
+      if (!isSlug(id->asString())) c.error(path + ".id", "must be lowercase letters, digits and hyphens, not starting with a hyphen");
+      if (std::find(projectIds.begin(), projectIds.end(), id->asString()) != projectIds.end()) c.error(path + ".id", "must be unique");
+      projectIds.push_back(id->asString());
+    }
+    if (const Json* repo = p.find("repo")) {
+      // null means no repository yet; anything else must be a string, empty or an https link.
+      bool ok = repo->isNull() || (repo->isString() && (repo->asString().empty() || startsWith(repo->asString(), "https://")));
+      if (!ok) c.error(path + ".repo", "must be empty or start with https://");
+    }
     c.need(p, path, "name", Json::Type::String);
     c.need(p, path, "tag", Json::Type::String);
     c.need(p, path, "summary", Json::Type::String);
-    c.need(p, path, "stack", Json::Type::Array);
+    if (const Json* stack = c.need(p, path, "stack", Json::Type::Array)) {
+      std::size_t i = 0;
+      for (const Json& item : stack->items()) {
+        if (!item.isString()) c.error(path + ".stack[" + std::to_string(i) + "]", "must be a string");
+        ++i;
+      }
+    }
     c.oneOf(p, path, "status", {"live", "shipped", "next", "planned"});
     c.need(p, path, "statusLabel", Json::Type::String);
   });
 
   checkArrayOfObjects(c, site, "experience", [&](const Json& e, const std::string& path) {
-    for (const char* k : {"role", "org", "start", "description"}) c.need(e, path, k, Json::Type::String);
+    for (const char* k : {"id", "role", "org", "start", "end", "description"}) c.need(e, path, k, Json::Type::String);
   });
 
   checkArrayOfObjects(c, site, "education", [&](const Json& e, const std::string& path) {
@@ -305,8 +380,12 @@ std::vector<Issue> checkSite(const Json& site, const std::vector<std::string>& f
   // Finance view copy and the figures in its numbers row. Each figure points at the entry it comes from.
   checkArrayOfObjects(c, site, "highlights", [&](const Json& h, const std::string& path) {
     for (const char* k : {"id", "value", "label", "source"}) c.need(h, path, k, Json::Type::String);
+    for (const char* k : {"value", "label"}) {
+      if (const Json* v = h.find(k)) c.noDollars(*v, path + "." + k);
+    }
   });
   if (const Json* fin = c.need(site, "", "finance", Json::Type::Object)) {
+    c.noDollars(*fin, "finance");
     c.need(*fin, "finance", "salutation", Json::Type::String);
     c.need(*fin, "finance", "letter", Json::Type::String);
     const Json* quote = c.need(*fin, "finance", "quote", Json::Type::String);

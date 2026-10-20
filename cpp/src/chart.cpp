@@ -62,7 +62,11 @@ bool isDate(const std::string& s) {
   }
   int month = (s[5] - '0') * 10 + (s[6] - '0');
   int day = (s[8] - '0') * 10 + (s[9] - '0');
-  return month >= 1 && month <= 12 && day >= 1 && day <= 31;
+  if (month < 1 || month > 12 || day < 1) return false;
+  int year = (s[0] - '0') * 1000 + (s[1] - '0') * 100 + (s[2] - '0') * 10 + (s[3] - '0');
+  bool leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+  static const int kDays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  return day <= (month == 2 && leap ? 29 : kDays[month - 1]);
 }
 
 bool plausibleIndex(double v) { return std::isfinite(v) && v >= 20.0 && v <= 500.0; }
@@ -195,7 +199,21 @@ bool parseHistory(const Json& feed, std::vector<Candle>& out, std::string& error
     error = "need at least 2 trading days";
     return false;
   }
-  if (result.size() > kMaxDays) result.erase(result.begin(), result.end() - static_cast<long>(kMaxDays));
+  if (result.size() > kMaxDays) {
+    result.erase(result.begin(), result.end() - static_cast<long>(kMaxDays));
+    // The feed is indexed to 100 at its own start, which was just dropped. Index each series to 100 on
+    // the first day kept (the bot by its close, like the benchmarks) so the base line still means "start".
+    const Candle first = result.front();
+    const double kBot = 100.0 / first.c, kSpy = 100.0 / first.spy, kMix = 100.0 / first.mix;
+    for (Candle& c : result) {
+      c.o = round2(c.o * kBot);
+      c.h = round2(c.h * kBot);
+      c.l = round2(c.l * kBot);
+      c.c = round2(c.c * kBot);
+      c.spy = round2(c.spy * kSpy);
+      c.mix = round2(c.mix * kMix);
+    }
+  }
   out = std::move(result);
   return true;
 }

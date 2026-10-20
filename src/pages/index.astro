@@ -4,13 +4,14 @@ import GatewayLayout from '../layouts/GatewayLayout.astro';
 import { site, withBase } from '../lib/site';
 import { enabledModes } from '../config';
 import { previewCandles } from '../lib/charts';
-import { stationWeather } from '../lib/weather';
+import { stationWeather, ageText } from '../lib/weather';
 
 const modes = enabledModes();
 const candles = await previewCandles(240, 72, 11, 28);
 
 // The latest METAR for the aviation door preview (a snapshot, or a labeled sample).
 const metar = stationWeather('KABE');
+const metarAge = ageText(Date.now() - Date.parse(metar.observedAt));
 const tokenClass = (t: string) =>
   /^[A-Z]{4}$/.test(t) ? 'm-stn'
   : /^\d{6}Z$/.test(t) ? 'm-time'
@@ -65,7 +66,7 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
                 {m.id === 'finance' && (
                   <span class="pv pv-fin">
                     <span class="pv-svg" set:html={candles.svg} />
-                    <span class="pv-tag">style preview</span>
+                    <span class="pv-tag">illustrative data</span>
                   </span>
                 )}
                 {m.id === 'terminal' && (
@@ -80,7 +81,7 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
                     <span class="pv-metar">
                       {metarTokens.map((t) => <span class={tokenClass(t)}>{t} </span>)}
                     </span>
-                    <span class="pv-tag">{metar.sample ? 'sample METAR' : 'latest METAR'}</span>
+                    <span class="pv-tag">{metar.sample ? 'sample METAR' : `METAR, ${metarAge} old when built`}</span>
                   </span>
                 )}
               </span>
@@ -129,7 +130,7 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
   }
   .continue {
     min-height: 44px;
-    margin-block: 20px 4px;
+    margin-block: 8px 0;
   }
   .chip {
     display: inline-flex;
@@ -191,9 +192,9 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
     background: var(--bg-hover);
     color: var(--fg);
   }
-  .door-finance { --door: #34d57a; }
+  .door-finance { --door: #ff8a66; }
   .door-terminal { --door: #ff9a1f; }
-  .door-aviation { --door: #ffb000; }
+  .door-aviation { --door: #d9dde3; }
   .door > :not(.preview) {
     margin-inline: 18px;
   }
@@ -223,7 +224,7 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
-  .pv-fin { background: #07111f; }
+  .pv-fin { background: #0d1210; }
   .pv-svg {
     display: block;
     width: 100%;
@@ -234,10 +235,9 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
     height: auto;
   }
   .pv-svg :global(.fcz-wick) { stroke-width: 1.2; }
-  .pv-svg :global(.fcz-wick.up) { stroke: #34d57a; }
-  .pv-svg :global(.fcz-wick.dn) { stroke: #ff6b6b; }
-  .pv-svg :global(.fcz-body.up) { fill: #34d57a; stroke: #34d57a; }
-  .pv-svg :global(.fcz-body.dn) { fill: #07111f; stroke: #ff6b6b; stroke-width: 1.2; }
+  .pv-svg :global(.fcz-wick) { stroke: #ff8a66; }
+  .pv-svg :global(.fcz-body.up) { fill: #ff8a66; stroke: #ff8a66; }
+  .pv-svg :global(.fcz-body.dn) { fill: #0d1210; stroke: #ff8a66; stroke-width: 1.2; }
   .pv-term {
     background: #000;
     color: #ff9a1f;
@@ -267,7 +267,8 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
     .caret { animation: none; }
   }
   .pv-avi {
-    background: #0a0c0d;
+    background: #fbfaf4;
+    color: #1f2a3c;
     font-family: 'B612 Mono', ui-monospace, monospace;
     font-size: 0.78rem;
   }
@@ -275,14 +276,15 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
     line-height: 1.7;
     overflow-wrap: anywhere;
   }
-  .m-stn { color: #ffb000; font-weight: 700; }
-  .m-time { color: #4fd0ea; }
-  .m-wind { color: #3fd16f; }
-  .m-vis { color: #4fd0ea; }
-  .m-cloud { color: #ffb000; }
-  .m-temp { color: #3fd16f; }
-  .m-qnh { color: #4fd0ea; }
-  .m-rmk { color: #92a09a; }
+  .m-stn { color: #0b2a5b; font-weight: 700; }
+  .m-time { color: #0b5a6b; }
+  .m-wind { color: #1b6b3a; }
+  .m-vis { color: #0b5a8a; }
+  .m-cloud { color: #1f2a3c; }
+  .m-temp { color: #556b00; }
+  .m-qnh { color: #0b5a8a; }
+  .m-rmk { color: #33415a; }
+  .pv-avi .pv-tag { color: #33415a; }
   .door-name {
     font-family: var(--font-mono);
     font-size: 1.35rem;

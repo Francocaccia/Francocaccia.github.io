@@ -65,6 +65,7 @@ const prompt = 'visitor@portfolio:~$';
   title="Terminal view"
   description={`${site.name}: an interactive shell in the browser. Type help, or click a command, to read about projects, experience, skills and contact details.`}
 >
+  <noscript><style>.try, .try-h { display: none; }</style></noscript>
   <div class="wrap">
     <div
       class="term-layout"
@@ -108,6 +109,7 @@ const prompt = 'visitor@portfolio:~$';
             spellcheck="false"
             enterkeyhint="go"
             inputmode="text"
+            maxlength="1000"
             aria-describedby="term-hint"
             disabled
             data-input
@@ -130,7 +132,7 @@ const prompt = 'visitor@portfolio:~$';
           same data as the other views, and nothing here can break.
         </p>
 
-        <h2>Try these</h2>
+        <h2 class="try-h">Try these</h2>
         <ul class="try">
           {
             tryThese.map((t) => (

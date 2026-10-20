@@ -64,8 +64,8 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
       {
         site.education.map((e) => (
           <li>
-            {e.degree}, {e.school}{opt(e, 'place') && `, ${opt(e, 'place')}`} (
-            {e.period.startsWith('TODO') ? <span class="todo">years: TODO</span> : e.period})
+            {e.degree}, {e.school}{opt(e, 'place') && `, ${opt(e, 'place')}`}{' '}
+            {e.period.startsWith('TODO') ? <span class="todo">years: TODO</span> : `(${e.period})`}
           </li>
         ))
       }
@@ -81,7 +81,7 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
       {
         site.certifications.map((c) => (
           <li>
-            {'issuer' in c ? `${c.issuer} ` : ''}{c.name}: {c.status}{opt(c, 'detail') && `, ${opt(c, 'detail')}`}
+            {c.name}{'issuer' in c ? ` (${c.issuer})` : ''}: {c.status.replace('-', ' ')}{opt(c, 'detail') && `, ${opt(c, 'detail')}`}
           </li>
         ))
       }

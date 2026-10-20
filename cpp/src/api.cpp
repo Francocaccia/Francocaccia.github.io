@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 
+#include "clamp.hpp"
 #include "fc/chart.hpp"
 #include "fc/geo.hpp"
 #include "fc/json.hpp"
@@ -47,7 +48,7 @@ ChartOptions chartOptions(const Json& in) {
   auto number = [&](const char* key, int fallback, int lo, int hi) {
     const Json& v = in.at(key);
     if (!v.isNumber()) return fallback;
-    return static_cast<int>(std::max<double>(lo, std::min<double>(hi, v.asNumber())));
+    return static_cast<int>(clampNumber(v.asNumber(), lo, hi, fallback));
   };
   o.width = number("width", o.width, 120, 1600);
   o.height = number("height", o.height, 48, 1200);
@@ -69,8 +70,8 @@ ChartOptions chartOptions(const Json& in) {
 Json opChartIllustrative(const Json& in) {
   ChartOptions o = chartOptions(in);
   o.illustrative = true;
-  int days = in.at("days").isNumber() ? static_cast<int>(in.at("days").asNumber()) : 30;
-  auto seed = static_cast<std::uint32_t>(in.at("seed").asNumber(7));
+  int days = static_cast<int>(clampNumber(in.at("days").asNumber(30), 2, 400, 30));
+  auto seed = static_cast<std::uint32_t>(clampNumber(in.at("seed").asNumber(7), 0, 4294967295.0, 7));
   return renderChart(illustrativeSeries(seed, days), o);
 }
 
@@ -122,7 +123,7 @@ Json opTermExec(const Json& in) {
   std::vector<std::string> history;
   for (const Json& h : in.at("history").items()) history.push_back(h.asString());
   std::string cwd = in.at("cwd").isString() ? in.at("cwd").asString() : "~";
-  return requireShell().exec(in.at("line").asString(), cwd, history, static_cast<long long>(in.at("now").asNumber(0)));
+  return requireShell().exec(in.at("line").asString(), cwd, history, static_cast<long long>(clampNumber(in.at("now").asNumber(0), -1e12, 1e12, 0)));
 }
 
 // input: {line, cwd?}

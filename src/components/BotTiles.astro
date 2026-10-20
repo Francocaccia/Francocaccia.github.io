@@ -12,10 +12,10 @@ interface Props {
 const { class: className = '' } = Astro.props;
 const bot = site.bot;
 const tiles = [
-  { id: 'return', label: 'Return' },
-  { id: 'vs_spy', label: 'vs SPY' },
-  { id: 'vs_6040', label: 'vs 60/40' },
-  { id: 'max_drawdown', label: 'Max drawdown' },
+  { id: 'return', label: 'Return', placeholder: '[+x.x%]' },
+  { id: 'vs_spy', label: 'vs SPY', placeholder: '[+x.x%]' },
+  { id: 'vs_6040', label: 'vs 60/40', placeholder: '[+x.x%]' },
+  { id: 'max_drawdown', label: 'Max drawdown', placeholder: '[-x.x%]' }, // a drawdown is never positive
 ];
 ---
 
@@ -32,7 +32,7 @@ const tiles = [
       tiles.map((t) => (
         <div class="bt-tile" data-tile={t.id} data-tone="none">
           <dt>{t.label}</dt>
-          <dd data-value>[+x.x%]</dd>
+          <dd data-value>{t.placeholder}</dd>
           <dd class="bt-cap" data-caption>placeholder until the feed answers</dd>
         </div>
       ))

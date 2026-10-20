@@ -458,3 +458,32 @@
     min-height: calc(18 * 1.55em);
   }
 }
+
+/* Touch: a bigger hit area for the inline command buttons without changing the line height
+   (vertical padding on an inline element does not move the lines). */
+@media (pointer: coarse) {
+  .cmd {
+    padding-block: 12px;
+  }
+  .term-keys button {
+    min-height: 44px;
+  }
+}
+
+/* Short, single-line labels keep the "Try these" buttons the same height. */
+.try-cmd {
+  white-space: nowrap;
+}
+
+.cheat summary,
+.cheat dl,
+.term-hint {
+  font-size: 0.8125rem;
+}
+
+/* More room on wide screens. */
+@media (min-width: 1200px) {
+  .wrap:has(> .term-layout) {
+    --measure: 80rem;
+  }
+}

@@ -13,7 +13,7 @@ interface Props {
 }
 
 const { lines } = Astro.props;
-const SAFE = /^(https:\/\/|mailto:|\/(?!\/))/;
+const SAFE = /^(https:\/\/|mailto:|\/(?![/\\]))[^\\\u0000-\u001f]*$/;
 
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');

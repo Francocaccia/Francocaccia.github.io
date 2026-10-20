@@ -5,6 +5,8 @@
 #include <cmath>
 #include <cstdio>
 
+#include "clamp.hpp"
+
 namespace fc {
 
 namespace {
@@ -107,8 +109,8 @@ Json routeMap(const Json& in) {
     apts.push_back({a.at("icao").asString(), a.at("name").asString(), {a.at("lat").asNumber(), a.at("lon").asNumber()}});
   }
 
-  int W = static_cast<int>(std::max(160.0, std::min(1200.0, in.at("width").asNumber(560))));
-  int H = static_cast<int>(std::max(160.0, std::min(1200.0, in.at("height").asNumber(W))));
+  int W = static_cast<int>(clampNumber(in.at("width").asNumber(560), 160, 1200, 560));
+  int H = static_cast<int>(clampNumber(in.at("height").asNumber(W), 160, 1200, W));
   std::string prefix = "fca";
   if (in.at("idPrefix").isString()) {
     std::string id;

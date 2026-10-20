@@ -1066,3 +1066,48 @@ button:disabled {
 @media (max-width: 420px) {
   :root[data-theme='aviation'] { --cell-pad: 12px; }
 }
+
+/* Review polish */
+
+/* Items 13 and 16 and the legs table stack in one column beside the route and its chart. */
+.stackcell {
+  padding: 0;
+}
+
+.sub-cell {
+  padding: var(--cell-pad);
+}
+
+.sub-cell + .sub-cell {
+  border-top: 1px solid var(--frame);
+}
+
+.map {
+  max-width: 420px;
+  margin-top: 12px;
+}
+
+.cell > .scroll {
+  margin-top: 8px;
+}
+
+/* B612 Mono gives every character, punctuation included, a full cell, so "-3.33%" and "4,469 NM" read as
+   gapped. Figures use the proportional face with tabular digits; codes and raw reports stay monospaced. */
+.bt-tile dd[data-value],
+.legs .num,
+.legs tbody th,
+.stamp,
+.band-val,
+.when,
+.tl-tick,
+.tl-label,
+.tl-label-out,
+.fca-tick,
+.fca-note {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.legs tbody th {
+  white-space: normal;
+}

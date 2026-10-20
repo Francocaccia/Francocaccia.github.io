@@ -19,8 +19,8 @@ export const MODES: ModeConfig[] = [
     id: 'aviation',
     label: 'Aviation',
     path: '/aviation/',
-    promise: 'The pilot and engineer read: route, weather and the math behind a flight.',
-    inside: ['Route map, SABE to KLYH to KABE', 'METAR and TAF decoders', 'Crosswind calculator', 'Pilot card'],
+    promise: 'The pilot read: the whole portfolio filed as an ICAO flight plan, with route, weather and tools.',
+    inside: ['Flight plan form (ICAO format)', 'Route map, SABE to KLYH to KABE', 'METAR and TAF decoders, crosswind calculator'],
     enabled: true,
   },
   {
@@ -35,8 +35,8 @@ export const MODES: ModeConfig[] = [
     id: 'finance',
     label: 'Finance',
     path: '/finance/',
-    promise: 'The investment-panel read: a paper-trading bot against its benchmarks.',
-    inside: ['AutoTradingBot candles vs SPY and 60/40', 'Project watchlist and skill heatmap', 'Policy bands and risk controls'],
+    promise: 'The annual-letter read: a paper-trading bot against its benchmarks, and the work behind it.',
+    inside: ['AutoTradingBot candles vs SPY and 60/40', 'Day-by-day chart with an excess strip', 'Projects, policy bands and risk controls'],
     enabled: true,
   },
 ];

@@ -101,3 +101,25 @@ TEST(stats_api_requires_an_object) {
   CHECK(ok.at("ok").asBool());
   CHECK(!ok.at("result").at("hasData").asBool());
 }
+
+TEST(stats_values_that_round_to_zero_are_neutral_and_unsigned) {
+  for (double v : {-0.004, 0.004, 0.0, -0.0}) {
+    Json raw = parse(kLive);
+    raw.set("bot_return_pct", v);
+    raw.set("excess_return_pct", v);
+    Json r = fc::normalizeStats(raw, "2026-10-13");
+    for (const char* id : {"return", "vs_spy"}) {
+      CHECK_EQ(tile(r, id)->at("text").asString(), std::string("0.00%"));
+      CHECK_EQ(tile(r, id)->at("tone").asString(), std::string("neutral"));
+    }
+  }
+  // The first value that does print as a number keeps its sign and tone.
+  Json raw = parse(kLive);
+  raw.set("bot_return_pct", -0.006);
+  raw.set("excess_return_pct", 0.006);
+  Json r = fc::normalizeStats(raw, "2026-10-13");
+  CHECK_EQ(tile(r, "return")->at("text").asString(), std::string("\xE2\x88\x92" "0.01%"));
+  CHECK_EQ(tile(r, "return")->at("tone").asString(), std::string("neg"));
+  CHECK_EQ(tile(r, "vs_spy")->at("text").asString(), std::string("+0.01%"));
+  CHECK_EQ(tile(r, "vs_spy")->at("tone").asString(), std::string("pos"));
+}

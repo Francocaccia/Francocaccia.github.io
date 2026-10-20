@@ -974,3 +974,11 @@
   font-family: var(--font-mono);
   font-size: 0.8125rem;
 }
+
+/* Review polish */
+.fcz-view { gap: 14px; }
+.k-candle { width: 16px; height: 12px; }
+.bt-note { padding-left: 12px; border-left: 2px solid var(--note); }
+.block .sub:not(:first-child) { margin-top: 28px; }
+.anatomy .code { align-self: start; }
+.dropcap::first-letter { padding-right: 0.02em; }

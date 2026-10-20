@@ -68,8 +68,10 @@ Json normalizeStats(const Json& raw, const std::string& trackingSince) {
       hasData = true;
       double value = v.asNumber();
       tile.set("value", value);
-      tile.set("text", percent(value));
-      const char* tone = !spec.signedTone || value == 0 ? "neutral" : (value > 0 ? "pos" : "neg");
+      std::string text = percent(value);
+      tile.set("text", text);
+      // A value that prints as 0.00% is not a gain or a loss, whatever sign it carries underneath.
+      const char* tone = !spec.signedTone || text == "0.00%" ? "neutral" : (value > 0 ? "pos" : "neg");
       tile.set("tone", tone);
       std::string caption = "since " + start;
       if (daysKnown) caption += ", " + std::to_string(days) + (days == 1 ? " trading day" : " trading days");

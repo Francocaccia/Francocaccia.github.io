@@ -48,6 +48,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
   title="Finance view"
   description={`${site.name}: an annual letter. A paper-trading bot against the S&P 500 and a 60/40 portfolio, the projects shipped and the record behind them. Paper trading only.`}
 >
+  <noscript><style>.toggle, .step, .js-only { display: none; }</style></noscript>
   <div
     class="wrap letter"
     data-finance
@@ -151,7 +152,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
             <li><i class="k-spy" aria-hidden="true"></i>S&P 500 (SPY)</li>
             <li class="key-mix"><i class="k-mix" aria-hidden="true"></i>60/40 (SPY/AGG)</li>
           </ul>
-          <button type="button" class="toggle" aria-pressed="true" data-mix-toggle disabled>60/40 line: on</button>
+          <button type="button" class="toggle" aria-pressed="true" data-mix-toggle disabled>60/40 line</button>
         </div>
 
         <div
@@ -189,7 +190,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
           <div><dt>SPY close</dt><dd data-f="spy">{last.spy.toFixed(2)}</dd></div>
           <div><dt>Bot minus SPY</dt><dd data-f="ex">{(last.ex >= 0 ? '+' : '−') + Math.abs(last.ex).toFixed(2)}</dd></div>
         </dl>
-        <p class="foot" data-chart-foot>Index points, 100 on the first day. Click or touch the chart, use the arrows, or press the left and right arrow keys.</p>
+        <p class="foot" data-chart-foot>
+          Index points, 100 on the first day. <span class="js-only">Click or touch the chart, use the arrows, or press the left and right arrow keys.</span>
+        </p>
         <details class="table-view">
           <summary>Table view</summary>
           <div class="scroll" tabindex="0" role="region" aria-label="Chart values as a table" data-table-host set:html={charts.wide.table} />
@@ -200,7 +203,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
       <figure class="figure" id="figure-2">
         <figcaption class="cap">Figure 2 · Anatomy of a decision · An example, not a real decision</figcaption>
         <div class="anatomy">
-          <pre class="code" tabindex="0" aria-label="Example model reply, as JSON"><code>{JSON.stringify(bot.exampleDecision, null, 2)}</code></pre>
+          <pre class="code" tabindex="0" role="region" aria-label="Example model reply, as JSON"><code>{JSON.stringify(bot.exampleDecision, null, 2)}</code></pre>
           <ol class="flow">
             {
               bot.decisionFlow.map((f) => (

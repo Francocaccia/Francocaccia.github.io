@@ -2,6 +2,7 @@
 #include <cctype>
 #include <cmath>
 
+#include "clamp.hpp"
 #include "fc/weather.hpp"
 #include "weather_internal.hpp"
 
@@ -87,7 +88,7 @@ Json decodeTaf(const Json& in) {
   ++i;
   if (i < tk.size() && tk[i] == "NIL") return fail("This TAF is NIL: no forecast is available for the station.");
   if (i >= tk.size() || !isRange(tk[i])) return fail("Could not find the validity period (for example 1618/1724).");
-  int monthDays = static_cast<int>(std::max(28.0, std::min(31.0, in.at("monthDays").asNumber(30))));
+  int monthDays = static_cast<int>(clampNumber(in.at("monthDays").asNumber(30), 28, 31, 30));
   Clock clock{intAt(tk[i], 0, 2), intAt(tk[i], 2, 2), monthDays};
   double validEnd = clock.offset(intAt(tk[i], 5, 2), intAt(tk[i], 7, 2), 0);
   if (validEnd <= 0) return fail("The validity period is not valid.");
@@ -245,7 +246,7 @@ Json decodeTaf(const Json& in) {
   html += "</div>";
 
   // -------------------------------------------------------------------- timeline
-  int W = static_cast<int>(std::max(240.0, std::min(1200.0, in.at("width").asNumber(720))));
+  int W = static_cast<int>(clampNumber(in.at("width").asNumber(720), 240, 1200, 720));
   bool narrow = W < 500;
   std::string prefix = "fct";
   if (in.at("idPrefix").isString()) {

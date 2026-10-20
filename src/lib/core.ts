@@ -10,6 +10,8 @@ interface CoreModule {
 
 type Reply<T> = { ok: true; result: T } | { ok: false; error: string };
 
+const MAX_INPUT_BYTES = 48 * 1024;
+
 let loading: Promise<CoreModule> | undefined;
 
 export function loadCore(): Promise<CoreModule> {
@@ -34,7 +36,10 @@ export function loadCore(): Promise<CoreModule> {
 /** Calls one C++ operation. Throws if the core reports an error. */
 export async function coreCall<T = unknown>(op: string, input?: unknown): Promise<T> {
   const core = await loadCore();
-  const ptr = core.ccall('fc_call', 'number', ['string', 'string'], [op, input === undefined ? '' : JSON.stringify(input)]);
+  const json = input === undefined ? '' : JSON.stringify(input);
+  // ccall copies string arguments onto the 64 KB wasm stack; past that the module traps and stays broken.
+  if (new TextEncoder().encode(json).length > MAX_INPUT_BYTES) throw new Error(`core.${op}: input is too long`);
+  const ptr = core.ccall('fc_call', 'number', ['string', 'string'], [op, json]);
   const reply = JSON.parse(core.UTF8ToString(ptr)) as Reply<T>;
   core._fc_free(ptr);
   if (!reply.ok) throw new Error(`core.${op}: ${reply.error}`);

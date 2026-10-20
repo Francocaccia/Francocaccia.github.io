@@ -11,7 +11,7 @@ export interface TermSpan {
 export type TermLine = TermSpan[];
 
 /** Links may only go to https, mailto, or a path on this site. */
-export const SAFE_HREF = /^(https:\/\/|mailto:|\/(?!\/))/;
+export const SAFE_HREF = /^(https:\/\/|mailto:|\/(?![/\\]))[^\\\u0000-\u001f]*$/;
 
 export function renderSpan(s: TermSpan): Node {
   if (s.k === 'link' && s.h && SAFE_HREF.test(s.h)) {

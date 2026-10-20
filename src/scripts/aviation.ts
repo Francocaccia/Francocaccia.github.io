@@ -50,6 +50,7 @@ function ageCounters() {
 function groupTooltips() {
   const tip = document.createElement('div');
   tip.className = 'av-tip';
+  tip.id = 'av-tip';
   tip.setAttribute('role', 'tooltip');
   tip.hidden = true;
   document.body.append(tip);
@@ -59,6 +60,7 @@ function groupTooltips() {
     if (!text) return;
     tip.textContent = text;
     tip.hidden = false;
+    el.setAttribute('aria-describedby', 'av-tip'); // spoken with the focused group
     const box = el.getBoundingClientRect();
     const width = tip.offsetWidth;
     const left = Math.max(8, Math.min(box.left, innerWidth - width - 8));
@@ -68,6 +70,7 @@ function groupTooltips() {
   };
   const hide = () => {
     tip.hidden = true;
+    document.querySelectorAll('.mt[aria-describedby]').forEach((el) => el.removeAttribute('aria-describedby'));
   };
   const target = (event: Event) => (event.target as Element | null)?.closest<HTMLElement>('.mt');
 
@@ -76,7 +79,8 @@ function groupTooltips() {
     if (el) show(el);
   });
   document.addEventListener('pointerout', (e) => {
-    if (target(e)) hide();
+    const el = target(e);
+    if (el && document.activeElement !== el) hide(); // a focused group keeps its tip
   });
   document.addEventListener('focusin', (e) => {
     const el = target(e);
@@ -153,7 +157,9 @@ async function interactive(root: HTMLElement) {
 
   type Decoded = { ok: boolean; error?: string; html: string; timeline: string };
 
+  let decodeSeq = 0;
   async function decode() {
+    const mine = ++decodeSeq;
     const raw = input.value.trim();
     if (!raw) return message('Paste a METAR or a TAF first, or pick an example.');
     try {
@@ -163,12 +169,14 @@ async function interactive(root: HTMLElement) {
           coreCall<Decoded>('taf.decode', { ...common, width: 720, idPrefix: 'pw' }),
           coreCall<Decoded>('taf.decode', { ...common, width: 360, idPrefix: 'pn' }),
         ]);
+        if (mine !== decodeSeq) return; // a newer request is on its way
         if (!wide.ok) return message(wide.error ?? 'Could not decode that TAF.', 'error');
         out.innerHTML = `<div class="rv timeline"><div class="rv-wide">${wide.timeline}</div><div class="rv-narrow">${narrow.timeline}</div></div>${wide.html}`;
         rovingGroups(out);
         return;
       }
       const result = await coreCall<Decoded>('metar.decode', { raw });
+      if (mine !== decodeSeq) return;
       if (!result.ok) return message(result.error ?? 'Could not decode that METAR.', 'error');
       out.innerHTML = result.html;
       rovingGroups(out);
@@ -224,7 +232,9 @@ async function interactive(root: HTMLElement) {
     xwOut.replaceChildren(p);
   };
 
+  let calcSeq = 0;
   async function calculate() {
+    const mine = ++calcSeq;
     const runway = rwyEl.value.trim();
     if (!runway) return xwMessage('Enter a runway number to see the components.');
     const dir = num(dirEl), speed = num(speedEl);
@@ -241,6 +251,7 @@ async function interactive(root: HTMLElement) {
         headText: string; crossText: string; gustHeadText?: string; gustCrossText?: string;
         windMagnetic: number; runwayHeading: number; error?: string; svg: string;
       }>('wind.components', { dir, speed, gust: gust ?? undefined, runway, variation: num(varEl) ?? 0, idPrefix: 'xw' });
+      if (mine !== calcSeq) return; // out of order: a newer calculation is running
       if (r.error) return xwMessage(r.error, 'error');
       const lines = [
         `Runway ${runway.toUpperCase()}, heading ${r.runwayHeading}° magnetic. Wind ${r.windMagnetic}° magnetic.`,
@@ -272,10 +283,13 @@ async function interactive(root: HTMLElement) {
     if (source.value !== 'manual') fillFromMetar();
     void calculate();
   });
+  // The result is a live region, so wait for a pause in typing instead of announcing every keystroke.
+  let typing: number | undefined;
   [dirEl, speedEl, gustEl, rwyEl, varEl].forEach((el) =>
     el.addEventListener('input', () => {
       if (el !== rwyEl && el !== varEl) source.value = 'manual';
-      void calculate();
+      clearTimeout(typing);
+      typing = window.setTimeout(() => void calculate(), 500);
     }),
   );
   root.querySelector<HTMLFormElement>('[data-xw-form]')!.addEventListener('submit', (e) => e.preventDefault());
