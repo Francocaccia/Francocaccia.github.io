@@ -10,12 +10,14 @@ interface Props {
   lede: string;
   stat: { value: string; label: string };
   cta: { href: string; label: string; mode?: string; external?: boolean };
+  /** A tall scene (the crypto one) is not pinned: it scrolls past instead of being clipped by the stage. */
+  pin?: boolean;
 }
 
-const { scene, id, kicker, title, lede, stat, cta } = Astro.props;
+const { scene, id, kicker, title, lede, stat, cta, pin = true } = Astro.props;
 ---
 
-<section class="chapter" data-scene={scene} aria-labelledby={`${id}-h`} id={id}>
+<section class="chapter" data-scene={scene} data-pin={pin ? undefined : 'false'} aria-labelledby={`${id}-h`} id={id}>
   <div class="stage">
     <div class="copy">
       <p class="kicker">{kicker}</p>

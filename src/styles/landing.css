@@ -844,13 +844,14 @@ main:has(> .landing) {
       view-timeline: --ch block;
     }
 
-    @media (min-height: 521px) {
-      html:not([data-motion='off']) .chapter {
+    /* Pinned stages need a screen tall and wide enough to hold the words and the scene side by side. */
+    @media (min-width: 900px) and (min-height: 640px) {
+      html:not([data-motion='off']) .chapter:not([data-pin='false']) {
         height: 260svh;
         padding: 0;
         content-visibility: visible;
       }
-      html:not([data-motion='off']) .chapter .stage {
+      html:not([data-motion='off']) .chapter:not([data-pin='false']) .stage {
         position: sticky;
         top: var(--bar-h);
         height: var(--stage-h);
@@ -858,10 +859,21 @@ main:has(> .landing) {
       }
     }
 
-    @media (min-height: 521px) and (max-width: 899px) {
+    /* Phones and short screens: nothing is pinned. The scene itself is the timeline, so it plays while it
+       crosses the screen, and the words rise as they arrive. */
+    @media (max-width: 899px), (max-height: 639px) {
       html:not([data-motion='off']) .chapter {
-        height: 200svh;
+        view-timeline: none;
       }
+      html:not([data-motion='off']) .chapter .scene {
+        view-timeline: --ch block;
+      }
+    }
+    html:not([data-motion='off']) .chapter[data-pin='false'] {
+      view-timeline: none;
+    }
+    html:not([data-motion='off']) .chapter[data-pin='false'] .scene {
+      view-timeline: --ch block;
     }
 
     html:not([data-motion='off']) .chapter .copy {
@@ -872,6 +884,16 @@ main:has(> .landing) {
       animation-play-state: running;
       animation-timeline: --ch;
       animation-range: cover 22% cover 34%;
+    }
+    @media (max-width: 899px), (max-height: 639px) {
+      html:not([data-motion='off']) .chapter .copy {
+        animation-timeline: view();
+        animation-range: entry 5% entry 70%;
+      }
+    }
+    html:not([data-motion='off']) .chapter[data-pin='false'] .copy {
+      animation-timeline: view();
+      animation-range: entry 5% entry 70%;
     }
 
     html:not([data-motion='off']) .chapter .fcz-wick,
