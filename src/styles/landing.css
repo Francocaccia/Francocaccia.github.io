@@ -8,8 +8,8 @@ main:has(> .landing) {
 }
 
 .landing {
-  --lp-sans: 'IBM Plex Sans', system-ui, sans-serif;
-  --lp-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --lp-sans: 'IBM Plex Sans', 'IBM Plex Sans Fallback', system-ui, sans-serif;
+  --lp-mono: 'IBM Plex Mono', 'IBM Plex Mono Fallback', ui-monospace, monospace;
   --stage-h: calc(100svh - var(--bar-h));
   overflow-x: clip;
 }
@@ -29,7 +29,7 @@ main:has(> .landing) {
   min-height: 44px;
   padding-inline: 20px;
   border: 1px solid var(--line-strong);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   font-family: var(--lp-mono);

@@ -14,8 +14,22 @@
   --link: #7cc4ff;
   --link-hover: #b3dcff;
   --focus: #ffd166;
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-body: 'IBM Plex Sans', 'IBM Plex Sans Fallback', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'IBM Plex Mono Fallback', ui-monospace, monospace;
+
+  /* Shared scales, the same in every view. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 450ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --radius: 10px;
 }
 
 /* Finance: "annual letter". Near-black green, coral accent, serif display. */
@@ -39,9 +53,9 @@
   --link: #ff8a66;
   --link-hover: #ffb8a3;
   --focus: #f2b66b;
-  --font-body: 'Instrument Sans', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, monospace;
-  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Instrument Sans', 'Instrument Sans Fallback', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', ui-monospace, monospace;
+  --font-display: 'Instrument Serif', 'Instrument Serif Fallback', Georgia, serif;
 }
 
 /* Terminal: amber phosphor on black. Clickable text is green. */
@@ -59,14 +73,17 @@
   --t-input: #ffd9a0;
   --t-cmd: #6ee787;
   --t-error: #ff7a59;
+  --t-warn: #f2b66b;
+  --t-cmd-bg: #0d2415;
+  --t-black: #000;
   --line: #2a1d0a;
   --line-strong: #5a3a0f;
   --link: #ffc266;
   --link-hover: #ffe0a8;
   --focus: #ffffff;
-  --font-body: 'JetBrains Mono', ui-monospace, monospace;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --font-display: 'VT323', 'JetBrains Mono', monospace;
+  --font-body: 'JetBrains Mono', 'JetBrains Mono Fallback', ui-monospace, monospace;
+  --font-mono: 'JetBrains Mono', 'JetBrains Mono Fallback', ui-monospace, monospace;
+  --font-display: 'VT323', 'VT323 Fallback', 'JetBrains Mono', monospace;
 }
 
 /* Aviation: an ICAO flight plan form. Paper, ink and a red stamp; light, unlike the other modes. */
@@ -86,6 +103,14 @@
   --map-sea: #f1f3f7;
   --map-grid: #cfd4de;
   --map-equator: #8a94a6;
+  --mt-hover: #e2dfcc;
+  --mt-time: #0b5a6b;
+  --mt-vis: #0b5a8a;
+  --mt-temp: #4b5e00;
+  --field: #ffffff;
+  --amber: #b45f06;
+  --runway: #e4e1d0;
+  --solid-hover: #ffffff;
   --frame: #111111;
   --accent: #0b2a5b;
   --line: #b9c0cc;
@@ -93,8 +118,8 @@
   --link: #0b2a5b;
   --link-hover: #b3261e;
   --focus: #b3261e;
-  --font-body: 'B612', system-ui, sans-serif;
-  --font-mono: 'B612 Mono', ui-monospace, monospace;
+  --font-body: 'B612', 'B612 Fallback', system-ui, sans-serif;
+  --font-mono: 'B612 Mono', 'B612 Mono Fallback', ui-monospace, monospace;
 }
 
 /* Crypto (landing page only): deep ink with a cool blue, for the toy blockchain scene. */
@@ -113,6 +138,6 @@
   --focus: #ffd166;
   --ok: #7ee0a5;
   --bad: #ff8a99;
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-body: 'IBM Plex Sans', 'IBM Plex Sans Fallback', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'IBM Plex Mono Fallback', ui-monospace, monospace;
 }

@@ -30,7 +30,7 @@
   flex-direction: column;
   border: 1px solid var(--line-strong);
   border-radius: 6px;
-  background: #000;
+  background: var(--t-black);
   overflow: hidden;
 }
 
@@ -107,7 +107,7 @@
   line-height: 1.55;
   overflow-wrap: anywhere;
   overscroll-behavior: contain;
-  background-color: #000;
+  background-color: var(--t-black);
   background-image: repeating-linear-gradient(to bottom, rgb(255 154 31 / 0.045) 0 1px, transparent 1px 3px);
 }
 
@@ -141,11 +141,11 @@
 .k-dim { color: var(--fg-muted); }
 .k-accent { color: var(--accent); font-weight: 700; }
 .k-head { color: var(--t-head); font-weight: 700; }
-.k-warn { color: #f2b66b; }
+.k-warn { color: var(--t-warn); }
 .k-error { color: var(--t-error); }
 .k-pos { color: var(--t-cmd); }
 .k-neg { color: var(--t-error); }
-.k-match { background: var(--accent); color: #000; }
+.k-match { background: var(--accent); color: var(--t-black); }
 
 .term a {
   color: var(--link);
@@ -165,7 +165,7 @@
 }
 
 .cmd:hover {
-  background: #0d2415;
+  background: var(--t-cmd-bg);
   text-decoration-style: solid;
 }
 
@@ -231,7 +231,7 @@
 }
 
 .run:hover {
-  background: #0d2415;
+  background: var(--t-cmd-bg);
 }
 
 /* Phones: 16px input text stops iOS from zooming the page when it is focused. */
@@ -341,7 +341,7 @@
 }
 
 .try-btn:hover {
-  background: #0d2415;
+  background: var(--t-cmd-bg);
   border-color: var(--t-cmd);
 }
 

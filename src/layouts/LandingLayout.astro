@@ -1,16 +1,11 @@
 ---
 // The landing page's shell. Same fonts as the gateway (the landing uses no others), plus the landing styles.
 // GatewayLayout stays as it is for the summary and 404 pages.
-import '@fontsource/ibm-plex-sans/latin-400.css';
-import '@fontsource/ibm-plex-sans/latin-600.css';
-import '@fontsource/ibm-plex-mono/latin-400.css';
-import '@fontsource/ibm-plex-mono/latin-600.css';
 import '../styles/landing.css';
-import plexSans400 from '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2?url';
-import plexSans600 from '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2?url';
-import plexMono400 from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url';
-import plexMono600 from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2?url';
+import { fontSets } from '../lib/fonts';
 import Base from './Base.astro';
+
+const fontSet = fontSets.gateway;
 
 interface Props {
   title: string;
@@ -20,7 +15,7 @@ interface Props {
 const { title, description } = Astro.props;
 ---
 
-<Base fonts={[plexSans400, plexSans600, plexMono400, plexMono600]} title={title} description={description} current="gateway" theme="gateway">
+<Base fonts={fontSet.preload} fontCss={fontSet.css} title={title} description={description} current="gateway" theme="gateway">
   <slot name="head" slot="head" />
   <slot />
 </Base>

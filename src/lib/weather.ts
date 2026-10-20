@@ -2,8 +2,9 @@
 // workflow if there is one, otherwise the labeled sample in the data file.
 import snapshot from '../data/weather.json';
 import { site } from './site';
+import { ageText, STALE_MS } from './age';
 
-export const STALE_MS = 6 * 60 * 60 * 1000;
+export { ageText, STALE_MS };
 
 export interface StationWeather {
   icao: string;
@@ -26,10 +27,3 @@ export function stationWeather(icao: string): StationWeather {
 /** "2026-10-18 15:00 UTC" */
 export const utcStamp = (iso: string): string => `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
 
-export function ageText(ms: number): string {
-  const minutes = Math.max(0, Math.round(ms / 60000));
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 48) return `${hours} h ${minutes % 60} min`;
-  return `${Math.floor(hours / 24)} days`;
-}

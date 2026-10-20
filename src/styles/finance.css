@@ -25,7 +25,6 @@
   }
 }
 
-.muted { color: var(--fg-muted); }
 .small { font-size: 0.875rem; }
 
 /* Masthead */
@@ -544,13 +543,13 @@
 .fcz-grid { stroke: var(--grid); stroke-width: 1; }
 .fcz-base { stroke: var(--line-strong); stroke-width: 1; }
 .fcz-zero { stroke: var(--line-strong); stroke-width: 1.2; }
-.fcz-tick { fill: var(--fg-muted); font: 400 11px var(--font-mono); }
-.fcz-end { fill: var(--fg); font: 500 11px var(--font-mono); }
+.fcz-tick { fill: var(--fg-muted); font: 400 12px var(--font-mono); }
+.fcz-end { fill: var(--fg); font: 500 12px var(--font-mono); }
 .fcz-end.bot { fill: var(--accent); }
 .fcz-end.spy { fill: var(--spy); }
-.fcz-end.mix { fill: #a3aba2; }
+.fcz-end.mix { fill: var(--fg-muted); }
 .fcz-end.ex { fill: var(--fg-muted); }
-.fcz-badge { fill: var(--note); font: 500 11px var(--font-mono); letter-spacing: 0.08em; }
+.fcz-badge { fill: var(--note); font: 500 12px var(--font-mono); letter-spacing: 0.08em; }
 
 .fcz-wick { stroke: var(--accent); stroke-width: 1.5; }
 .fcz-body { stroke: var(--accent); stroke-width: 1.5; }
@@ -671,13 +670,6 @@
   cursor: pointer;
   font-size: 0.9375rem;
 }
-
-.scroll {
-  overflow-x: auto;
-  max-width: 100%;
-}
-
-.scroll:focus-visible { outline-offset: -3px; }
 
 .fcz-table {
   width: 100%;
@@ -965,7 +957,7 @@
 .btn-coral { border-color: var(--accent); color: var(--accent); }
 .btn-coral:hover { color: var(--link-hover); background: rgb(255 138 102 / 0.1); }
 .btn-solid { border-color: var(--fg); background: var(--fg); color: var(--bg); }
-.btn-solid:hover { background: #ffffff; color: var(--bg); }
+.btn-solid:hover { background: var(--fg-hover-solid, #fff); color: var(--bg); }
 
 .mail {
   display: inline-flex;

@@ -1,14 +1,9 @@
 ---
-import '@fontsource/b612/latin-400.css';
-import '@fontsource/b612/latin-700.css';
-import '@fontsource/b612-mono/latin-400.css';
-import '@fontsource/b612-mono/latin-700.css';
 import '../styles/aviation.css';
-import b612400 from '@fontsource/b612/files/b612-latin-400-normal.woff2?url';
-import b612700 from '@fontsource/b612/files/b612-latin-700-normal.woff2?url';
-import b612Mono400 from '@fontsource/b612-mono/files/b612-mono-latin-400-normal.woff2?url';
-import b612Mono700 from '@fontsource/b612-mono/files/b612-mono-latin-700-normal.woff2?url';
+import { fontSets } from '../lib/fonts';
 import Base from './Base.astro';
+
+const fontSet = fontSets.aviation;
 
 interface Props {
   title: string;
@@ -18,6 +13,6 @@ interface Props {
 const { title, description } = Astro.props;
 ---
 
-<Base fonts={[b612400, b612700, b612Mono400, b612Mono700]} title={title} description={description} current="aviation" theme="aviation">
+<Base fonts={fontSet.preload} fontCss={fontSet.css} title={title} description={description} current="aviation" theme="aviation">
   <slot />
 </Base>

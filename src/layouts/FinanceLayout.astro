@@ -1,16 +1,9 @@
 ---
-import '@fontsource/instrument-serif/latin-400.css';
-import '@fontsource/instrument-serif/latin-400-italic.css';
-import '@fontsource/instrument-sans/latin-400.css';
-import '@fontsource/instrument-sans/latin-500.css';
-import '@fontsource/instrument-sans/latin-600.css';
-import '@fontsource/geist-mono/latin-400.css';
-import '@fontsource/geist-mono/latin-500.css';
 import '../styles/finance.css';
-import serif400 from '@fontsource/instrument-serif/files/instrument-serif-latin-400-normal.woff2?url';
-import sans400 from '@fontsource/instrument-sans/files/instrument-sans-latin-400-normal.woff2?url';
-import mono400 from '@fontsource/geist-mono/files/geist-mono-latin-400-normal.woff2?url';
+import { fontSets } from '../lib/fonts';
 import Base from './Base.astro';
+
+const fontSet = fontSets.finance;
 
 interface Props {
   title: string;
@@ -21,6 +14,6 @@ const { title, description } = Astro.props;
 ---
 
 <!-- The hero is set in the serif and the masthead in the mono, so those load first; the italic and the other weights follow. -->
-<Base fonts={[serif400, sans400, mono400]} title={title} description={description} current="finance" theme="finance">
+<Base fonts={fontSet.preload} fontCss={fontSet.css} title={title} description={description} current="finance" theme="finance">
   <slot />
 </Base>

@@ -16,11 +16,13 @@ interface Props {
   theme?: 'gateway' | 'finance' | 'terminal' | 'aviation';
   /** woff2 URLs used above the fold; preloading them stops the text from jumping when the fonts arrive. */
   fonts?: string[];
+  /** The @font-face rules for this view (src/lib/fonts.ts): woff2 only, with metric-matched fallbacks. */
+  fontCss?: string;
   /** Error pages: no canonical URL, and tell search engines to leave them out. */
   noindex?: boolean;
 }
 
-const { title, description, current, theme = 'gateway', fonts = [], noindex = false } = Astro.props;
+const { title, description, current, theme = 'gateway', fonts = [], fontCss = '', noindex = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const fullTitle = title === site.name ? title : `${title} | ${site.name}`;
 const coreV = await coreVersion();
@@ -36,10 +38,13 @@ const themeColor = { gateway: '#0e1013', finance: '#0d1210', terminal: '#000000'
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
     <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <link rel="icon" href={withBase('/favicon.ico')} sizes="32x32" />
+    <link rel="apple-touch-icon" href={withBase('/apple-touch-icon.png')} />
     <meta name="generator" content={`Astro, fc-core ${coreV}`} />
     <meta name="theme-color" content={themeColor[theme]} />
     <meta name="color-scheme" content={theme === 'aviation' ? 'light' : 'dark'} />
     {fonts.map((href) => <link rel="preload" as="font" type="font/woff2" href={href} crossorigin />)}
+    {fontCss && <style set:html={fontCss} />}
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.name} />

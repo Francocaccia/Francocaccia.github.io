@@ -12,6 +12,7 @@
     "test": "node scripts/test-cpp.mjs",
     "test:ts": "node --test \"tests/ts/*.test.ts\"",
     "build:world": "node scripts/build-world.mjs",
+    "build:icons": "node scripts/make-icons.mjs",
     "check:data": "node scripts/check-data.mjs",
     "fetch:metar": "node scripts/fetch-metar.mjs",
     "check:links": "node scripts/check-links.mjs",
@@ -36,6 +37,7 @@
     "astro": "7.4.0"
   },
   "devDependencies": {
+    "@capsizecss/metrics": "4.4.0",
     "d3-geo": "3.1.1",
     "topojson-client": "3.1.0",
     "typescript": "7.0.2",

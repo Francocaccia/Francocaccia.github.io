@@ -3,8 +3,7 @@
 // Markup the core returns is built from escaped text, so it is assigned with innerHTML.
 
 import { afterLoad } from '../lib/after-load';
-
-const STALE_MS = 6 * 60 * 60 * 1000;
+import { ageText, STALE_MS } from '../lib/age';
 
 const root = document.querySelector<HTMLElement>('[data-av]');
 if (root) start(root);
@@ -17,14 +16,6 @@ function start(root: HTMLElement) {
 }
 
 // ---- report ages --------------------------------------------------------------------------
-
-function ageText(ms: number): string {
-  const minutes = Math.max(0, Math.round(ms / 60000));
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 48) return `${hours} h ${minutes % 60} min`;
-  return `${Math.floor(hours / 24)} days`;
-}
 
 function ageCounters() {
   const update = () => {

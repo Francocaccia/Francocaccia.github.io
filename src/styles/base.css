@@ -110,6 +110,21 @@ main {
   border: 0;
 }
 
+/* Shared by every view. */
+.muted {
+  color: var(--fg-muted);
+}
+
+/* A box that scrolls sideways (wide tables) instead of the page. */
+.scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.scroll:focus-visible {
+  outline-offset: -3px;
+}
+
 .todo {
   display: inline-block;
   padding: 0 0.4em;
@@ -222,8 +237,6 @@ main {
 }
 
 /* Standalone links (not inside a sentence) get a comfortable target. */
-.fin-links a,
-.av-links a,
 .quick a {
   display: inline-flex;
   align-items: center;

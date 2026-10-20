@@ -47,19 +47,9 @@
   min-width: 0;
 }
 
-.sheet h1,
-.sheet h2,
-.sheet h3,
-.sheet h4 {
+/* One class of specificity, like the rules below, so each of them sets its own margin by coming later. */
+.sheet :where(h1, h2, h3, h4, p) {
   margin: 0;
-}
-
-.sheet p {
-  margin: 0;
-}
-
-.muted {
-  color: var(--fg-muted);
 }
 
 .error {
@@ -100,14 +90,14 @@
 
 .lead {
   max-width: 44rem;
-  margin-top: 10px !important;
+  margin-top: 10px;
   color: var(--fg);
   font-size: 1rem;
 }
 
 .stamp {
   display: inline-block;
-  margin-top: 14px !important;
+  margin-top: 14px;
   padding: 4px 12px;
   border: 3px solid var(--red);
   color: var(--red);
@@ -124,7 +114,7 @@
     position: absolute;
     top: 22px;
     right: 28px;
-    margin-top: 0 !important;
+    margin-top: 0;
     font-size: 1.125rem;
     transform: rotate(-8deg);
     transform-origin: center;
@@ -181,7 +171,7 @@
 
 /* Labels and numbers */
 .lbl {
-  margin-bottom: 6px !important;
+  margin-bottom: 6px;
   color: var(--fg-muted);
   font-family: var(--font-body);
   font-size: 0.75rem;
@@ -196,7 +186,7 @@
 }
 
 .lbl-sub {
-  margin: 16px 0 8px !important;
+  margin: 16px 0 8px;
   color: var(--fg-muted);
   font-size: 0.75rem;
   font-weight: 700;
@@ -248,14 +238,14 @@
 }
 
 .sub {
-  margin-top: 4px !important;
+  margin-top: 4px;
   color: var(--fg-muted);
   font-size: 0.75rem;
   letter-spacing: 0.04em;
 }
 
 .prose {
-  margin-top: 8px !important;
+  margin-top: 8px;
   max-width: 62ch;
   color: var(--fg);
 }
@@ -273,10 +263,10 @@
   background: var(--band);
   color: var(--fg);
   font-family: var(--font-body);
-  font-size: 0.8125rem !important;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  line-height: 1.4 !important;
+  line-height: 1.4;
   text-transform: uppercase;
 }
 
@@ -296,7 +286,7 @@
 
 /* Titles */
 .title {
-  margin-top: 2px !important;
+  margin-top: 2px;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 1.625rem;
@@ -311,7 +301,7 @@
 .status,
 .when,
 .org {
-  margin-top: 4px !important;
+  margin-top: 4px;
   font-size: 0.8125rem;
 }
 
@@ -326,7 +316,7 @@
 }
 
 .stack {
-  margin-top: 10px !important;
+  margin-top: 10px;
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.8125rem;
@@ -340,7 +330,7 @@
 }
 
 .cell > p:has(> a) {
-  margin-top: 4px !important;
+  margin-top: 4px;
   font-size: 0.875rem;
 }
 
@@ -557,27 +547,21 @@
 .bt-tile[data-tone='neutral'] dd[data-value] { color: var(--ink); }
 
 .bt-cap {
-  margin-top: 2px !important;
+  margin-top: 2px;
   color: var(--fg-muted);
   font-size: 0.75rem;
   line-height: 1.35;
 }
 
 .bt-note {
-  margin-top: 8px !important;
+  margin-top: 8px;
   color: var(--warn);
   font-size: 0.8125rem;
 }
 
 /* Tables */
 .scroll {
-  max-width: 100%;
   margin-top: 8px;
-  overflow-x: auto;
-}
-
-.scroll:focus-visible {
-  outline-offset: -3px;
 }
 
 table.legs,
@@ -672,7 +656,7 @@ table.legs,
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 10px;
-  margin-bottom: 10px !important;
+  margin-bottom: 10px;
   color: var(--fg-muted);
   font-size: 0.8125rem;
 }
@@ -693,7 +677,7 @@ table.legs,
 .flag-stale { color: var(--red); }
 
 .src {
-  margin-top: 10px !important;
+  margin-top: 10px;
   color: var(--fg-muted);
   font-size: 0.8125rem;
 }
@@ -717,18 +701,18 @@ table.legs,
 
 .mt:hover,
 .mt:focus-visible {
-  background: #e2dfcc;
+  background: var(--mt-hover);
 }
 
 .mt-type, .mt-mod, .mt-rmk, .mt-rmktoken { color: var(--fg-muted); }
 .mt-station { color: var(--ink); font-weight: 700; }
-.mt-time { color: #0b5a6b; }
+.mt-time { color: var(--mt-time); }
 .mt-wind, .mt-windvar { color: var(--pos); }
-.mt-vis, .mt-rvr { color: #0b5a8a; }
+.mt-vis, .mt-rvr { color: var(--mt-vis); }
 .mt-wx { color: var(--warn); }
 .mt-cloud { color: var(--fg); }
-.mt-temp { color: #4b5e00; }
-.mt-qnh { color: #0b5a8a; }
+.mt-temp { color: var(--mt-temp); }
+.mt-qnh { color: var(--mt-vis); }
 .mt-trend { color: var(--ink); }
 .mt-unknown { color: var(--red); border-bottom-style: solid; }
 
@@ -820,8 +804,8 @@ table.legs,
   margin-bottom: 16px;
 }
 
-.tl-grid { stroke: #c9ced8; stroke-width: 1; }
-.tl-tick { fill: var(--fg-muted); font-family: var(--font-mono); font-size: 11px; }
+.tl-grid { stroke: var(--map-grid); stroke-width: 1; }
+.tl-tick { fill: var(--fg-muted); font-family: var(--font-mono); font-size: 12px; }
 .tl-bar { stroke: var(--paper); stroke-width: 1; }
 .tl-bar.cat-vfr { fill: var(--cat-vfr); }
 .tl-bar.cat-mvfr { fill: var(--cat-mvfr); }
@@ -830,8 +814,8 @@ table.legs,
 .tl-bar.cat-unknown { fill: var(--fg-muted); }
 .tl-tempo, .tl-becmg { opacity: 0.92; }
 .tl-prob { stroke: var(--frame); stroke-width: 1.5; stroke-dasharray: 5 3; }
-.tl-label-out { fill: var(--fg); font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
-.tl-label { fill: var(--cat-ink); font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+.tl-label-out { fill: var(--fg); font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+.tl-label { fill: var(--cat-ink); font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
 
 .tf-list {
   display: grid;
@@ -885,7 +869,7 @@ select {
   padding: 9px 10px;
   border: 1px solid var(--frame);
   border-radius: 0;
-  background: #ffffff;
+  background: var(--field);
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 16px;
@@ -943,7 +927,7 @@ button:disabled {
 }
 
 .examples-h {
-  margin: 16px 0 8px !important;
+  margin: 16px 0 8px;
   color: var(--fg-muted);
   font-size: 0.75rem;
   font-weight: 700;
@@ -1013,15 +997,15 @@ button:disabled {
 .xw-key { font-size: 0.8125rem; }
 .xw-fig { max-width: 15rem; }
 .xw-svg { display: block; width: 100%; height: auto; }
-.xw-ring { fill: none; stroke: #8a94a6; }
-.xw-rwy { fill: #e4e1d0; stroke: var(--frame); }
+.xw-ring { fill: none; stroke: var(--map-equator); }
+.xw-rwy { fill: var(--runway); stroke: var(--frame); }
 .xw-cl { stroke: #6b7587; stroke-width: 1.5; stroke-dasharray: 6 6; }
 .xw-num { fill: var(--fg); font-family: var(--font-mono); font-size: 16px; font-weight: 700; }
-.xw-note { fill: var(--fg-muted); font-family: var(--font-mono); font-size: 10px; }
+.xw-note { fill: var(--fg-muted); font-family: var(--font-mono); font-size: 12px; }
 .xw-wind { stroke: var(--cat-mvfr); stroke-width: 3; }
 .xw-wind-head { fill: var(--cat-mvfr); }
 .xw-head { stroke: var(--pos); stroke-width: 4; }
-.xw-cross { stroke: #b45f06; stroke-width: 4; }
+.xw-cross { stroke: var(--amber); stroke-width: 4; }
 
 /* Footer of the sheet */
 .sheet-foot {
@@ -1045,7 +1029,7 @@ button:disabled {
 }
 
 .disclaimer {
-  margin-top: 6px !important;
+  margin-top: 6px;
   color: var(--fg);
   font-size: 0.8125rem;
   font-weight: 700;
