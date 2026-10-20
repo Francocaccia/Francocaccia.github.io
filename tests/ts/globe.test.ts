@@ -19,6 +19,7 @@ import {
   inertiaVelocity,
   insideEvenOdd,
   nudgeView,
+  airportBoxes,
   placeAirports,
   placeCountryLabels,
   toPath,
@@ -244,6 +245,20 @@ test('country labels: Argentina, Brazil and the United States show on the first 
   assert.deepEqual(placeCountryLabels(world.labels, viewer(0, 170), 170, 170, 150), []);
   for (let i = 0; i < placed.length; i++) {
     for (let j = i + 1; j < placed.length; j++) assert.ok(Math.hypot(placed[i].x - placed[j].x, placed[i].y - placed[j].y) >= 40);
+  }
+});
+
+test('country labels keep clear of airport markers and codes at the page sizes', () => {
+  for (const box of [300, 360, 420]) {
+    const r = 0.46 * box;
+    const v = viewer(3.1, -66.6);
+    const placed = placeAirports(route, v, box / 2, box / 2, r);
+    const avoid = airportBoxes(placed);
+    for (const l of placeCountryLabels(world.labels, v, box / 2, box / 2, r, 4, avoid)) {
+      const w = l.n.length * 7 * 1.05;
+      const b = { x0: l.x - w / 2, y0: l.y - 10, x1: l.x + w / 2, y1: l.y + 3 };
+      for (const a of avoid) assert.ok(!(b.x0 < a.x1 && b.x1 > a.x0 && b.y0 < a.y1 && b.y1 > a.y0), `${l.n} overlaps an airport at ${box}px`);
+    }
   }
 });
 
