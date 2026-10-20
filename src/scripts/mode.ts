@@ -48,4 +48,8 @@ if (menu) {
   document.addEventListener('click', (event) => {
     if (menu.open && !menu.contains(event.target as Node)) menu.open = false;
   });
+  // Tabbing out of the menu closes it, so it does not stay open over the page.
+  menu.addEventListener('focusout', (event) => {
+    if (menu.open && !menu.contains(event.relatedTarget as Node | null)) menu.open = false;
+  });
 }

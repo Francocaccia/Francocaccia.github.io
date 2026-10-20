@@ -91,3 +91,10 @@ const personJson = JSON.stringify(person).replace(/</g, '\\u003c');
     <p>{site.languages.map((l) => `${l.name} (${l.level})`).join(', ')}</p>
   </div>
 </GatewayLayout>
+
+<style>
+  /* About 70 characters per line, however wide the screen. */
+  .wrap {
+    max-width: 52rem;
+  }
+</style>

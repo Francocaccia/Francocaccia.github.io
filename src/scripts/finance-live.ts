@@ -5,6 +5,7 @@
 //  - Adds day-by-day inspection: click, touch, hover, the arrow buttons, or the arrow keys. One day is always
 //    selected; the sentence under the chart, the numbers row and the markers on the chart all follow it.
 import { afterLoad } from '../lib/after-load';
+import { fetchBotJson } from '../lib/bot-fetch';
 import type { ChartPoint, ChartResult } from '../lib/charts';
 import { SIZES, type Variant } from '../lib/charts';
 
@@ -57,12 +58,7 @@ function start(root: HTMLElement) {
     const warming = () =>
       setNotice('warming', `${ILLUSTRATIVE} Live data is warming up: the history feed has no data yet or could not be reached.`);
     try {
-      const response = await fetch(`${apiBase}${historyPath}`, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(timeoutMs),
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const raw: unknown = await response.json();
+      const raw = await fetchBotJson(`${apiBase}${historyPath}`, timeoutMs);
       if (!Array.isArray(raw) || raw.length < 2) return warming();
       const { coreCall } = await import('../lib/core');
       const variants = Object.keys(SIZES) as Variant[];
@@ -75,7 +71,7 @@ function start(root: HTMLElement) {
         return { host, points: results[i].points, plot: results[i].plot, exPlot: results[i].exPlot ?? null };
       });
       inspector.useViews(views);
-      const wide = results[results.length - 1];
+      const wide = results[variants.indexOf('wide')]; // by name, not by position
       if (tableHost) tableHost.innerHTML = wide.table;
       setNotice('live', `Live data from the paper account: ${wide.n} trading days since ${wide.points[0]?.label ?? ''}.`);
       fig!.dataset.live = 'true';

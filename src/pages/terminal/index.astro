@@ -65,7 +65,9 @@ const prompt = 'visitor@portfolio:~$';
   title="Terminal view"
   description={`${site.name}: an interactive shell in the browser. Type help, or click a command, to read about projects, experience, skills and contact details.`}
 >
-  <noscript><style>.try, .try-h { display: none; }</style></noscript>
+  <script is:inline>
+    document.documentElement.classList.add('js');
+  </script>
   <div class="wrap">
     <div
       class="term-layout"

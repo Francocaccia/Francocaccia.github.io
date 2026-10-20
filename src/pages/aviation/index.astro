@@ -82,8 +82,8 @@ const resume = real(site.resume);
         <h1 id="title">{site.name}</h1>
         <p class="lead">{site.positioning} {site.openTo}</p>
         <p class="stamp">
-          <span aria-hidden="true">FILED / {filedOn}</span>
-          <span class="visually-hidden">Filed on {filedOn}</span>
+          <span aria-hidden="true">BUILT / {filedOn}</span>
+          <span class="visually-hidden">Site built on {filedOn}</span>
         </p>
       </header>
 
@@ -399,7 +399,7 @@ const resume = real(site.resume);
                 <input type="text" inputmode="text" maxlength="3" placeholder="for example 24" autocomplete="off" spellcheck="false" disabled data-xw="runway" />
               </label>
               <label>Magnetic variation, degrees (east +, optional)
-                <input type="number" inputmode="decimal" min="-90" max="90" step="0.1" disabled data-xw="variation" />
+                <input type="number" min="-90" max="90" step="0.1" disabled data-xw="variation" />
               </label>
             </div>
           </form>

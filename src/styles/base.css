@@ -64,7 +64,6 @@ a:hover {
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
-  border-radius: 2px;
 }
 
 .wrap {
@@ -145,14 +144,73 @@ main {
 
 /* Printing (the quick view is meant to be printable): plain black on white, no bar. */
 @media print {
+  /* Every theme prints dark on white: the tokens are re-mapped (the doubled :root beats the theme blocks),
+     so headings, numbers and chart lines stay readable and no ink goes on backgrounds. */
+  :root:root,
+  :root:root[data-theme] {
+    --bg: #fff;
+    --bg-raised: #fff;
+    --bg-hover: #fff;
+    --fg: #000;
+    --fg-body: #000;
+    --fg-muted: #333;
+    --accent: #000;
+    --line: #999;
+    --line-strong: #000;
+    --link: #000;
+    --link-hover: #000;
+    --grid: #ccc;
+    --spy: #1a3a8a;
+    --mix: #555;
+    --note: #000;
+    --t-head: #000;
+    --t-input: #000;
+    --t-cmd: #000;
+    --t-error: #000;
+    --ink: #000;
+    --red: #000;
+    --warn: #000;
+    --placeholder: #333;
+    --frame: #000;
+    --pos: #000;
+    --neg: #000;
+    --cz-panel: #fff;
+    --cz-neg: #555;
+  }
   body {
     padding-top: 0;
     background: #fff !important;
     color: #000 !important;
   }
   .fc-bar,
-  .skip-link {
+  .skip-link,
+  .term-input,
+  .term-keys,
+  .term-panel,
+  .toggle,
+  .step,
+  .js-only,
+  .globe-controls {
     display: none !important;
+  }
+  .term,
+  .term-bar,
+  .term-banner,
+  .term-screen {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .term-screen {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .cat {
+    background: none !important;
+    border: 1px solid #000;
+    color: #000 !important;
+  }
+  .tl-label {
+    fill: #000;
   }
   a {
     color: #000 !important;

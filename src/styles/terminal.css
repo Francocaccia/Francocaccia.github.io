@@ -487,3 +487,24 @@
     --measure: 80rem;
   }
 }
+
+/* Without JavaScript the shell cannot run commands, so its buttons are not shown either. */
+html:not(.js) .try,
+html:not(.js) .try-h {
+  display: none;
+}
+
+@media print {
+  .k-warn,
+  .k-error,
+  .k-pos,
+  .k-neg,
+  .k-dim {
+    color: #000 !important;
+  }
+  .k-match {
+    background: none !important;
+    color: #000 !important;
+    text-decoration: underline;
+  }
+}

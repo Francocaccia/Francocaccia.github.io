@@ -743,7 +743,7 @@ table.legs,
 .mt-vis, .mt-rvr { color: #0b5a8a; }
 .mt-wx { color: var(--warn); }
 .mt-cloud { color: var(--fg); }
-.mt-temp { color: #556b00; }
+.mt-temp { color: #4b5e00; }
 .mt-qnh { color: #0b5a8a; }
 .mt-trend { color: var(--ink); }
 .mt-unknown { color: var(--red); border-bottom-style: solid; }
@@ -773,6 +773,11 @@ table.legs,
 .mx-why {
   color: var(--fg-muted);
   font-size: 0.875rem;
+}
+
+.mx-table th,
+.mx-table td {
+  overflow-wrap: anywhere;
 }
 
 .mx-table th {

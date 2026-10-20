@@ -2,6 +2,7 @@
 // for the page to finish loading, and the free host can take about a minute to wake, so the request
 // has a long timeout. The C++ core keeps only the whitelisted percentage fields.
 import { afterLoad } from '../lib/after-load';
+import { fetchBotJson } from '../lib/bot-fetch';
 
 interface Tile {
   id: string;
@@ -27,12 +28,7 @@ export async function startBotTiles(root: HTMLElement) {
   await afterLoad();
   say('Waking up the bot. The free host can take about a minute; the placeholders stay until it answers.');
   try {
-    const response = await fetch(`${apiBase}${statsPath}`, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const raw = await response.json();
+    const raw = await fetchBotJson(`${apiBase}${statsPath}`, timeoutMs);
     const { coreCall } = await import('../lib/core');
     const stats = await coreCall<StatsResult>('stats.normalize', { stats: raw, trackingSince });
     for (const tile of stats.tiles) {
@@ -45,6 +41,8 @@ export async function startBotTiles(root: HTMLElement) {
     const parts = [stats.note, stats.asOf ? `Updated ${stats.asOf}.` : ''].filter(Boolean);
     say(parts.join(' ') || `Tracking since ${stats.startDate}.`);
   } catch {
+    // The values stay as placeholders; the captions stop promising that a feed is about to answer.
+    root.querySelectorAll<HTMLElement>('[data-caption]').forEach((el) => (el.textContent = 'no data'));
     say(`The bot did not answer, so the placeholders stay (tracking since ${trackingSince}).`);
   }
 }

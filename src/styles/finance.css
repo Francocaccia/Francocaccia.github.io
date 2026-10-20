@@ -889,7 +889,7 @@
 
 .skills {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
   gap: 24px;
   margin-bottom: 16px;
 }
@@ -973,6 +973,13 @@
   min-height: 44px;
   font-family: var(--font-mono);
   font-size: 0.8125rem;
+}
+
+/* Without JavaScript the chart controls would do nothing, so they are not shown. */
+html:not(.js) .toggle,
+html:not(.js) .step,
+html:not(.js) .js-only {
+  display: none;
 }
 
 /* Review polish */

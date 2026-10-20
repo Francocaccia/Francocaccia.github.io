@@ -2,6 +2,7 @@
 // C++ core running as WebAssembly; this file only handles input, history and the DOM.
 import { STORAGE_KEY } from '../config';
 import { afterLoad } from '../lib/after-load';
+import { fetchBotJson } from '../lib/bot-fetch';
 import { renderLines, type TermLine } from '../lib/term-render';
 
 interface ExecResult {
@@ -106,8 +107,7 @@ async function start(root: HTMLElement) {
   async function fetchBot(signal: AbortSignal): Promise<{ raw: unknown; history: unknown }> {
     const get = async (path: string): Promise<unknown> => {
       try {
-        const response = await fetch(`${apiBase}${path}`, { headers: { Accept: 'application/json' }, signal });
-        return response.ok ? await response.json() : null;
+        return await fetchBotJson(`${apiBase}${path}`, timeoutMs, signal);
       } catch {
         return null;
       }

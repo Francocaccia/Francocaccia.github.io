@@ -48,7 +48,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
   title="Finance view"
   description={`${site.name}: an annual letter. A paper-trading bot against the S&P 500 and a 60/40 portfolio, the projects shipped and the record behind them. Paper trading only.`}
 >
-  <noscript><style>.toggle, .step, .js-only { display: none; }</style></noscript>
+  <script is:inline>
+    document.documentElement.classList.add('js');
+  </script>
   <div
     class="wrap letter"
     data-finance
