@@ -440,12 +440,13 @@ TEST(geo_intermediate_points_lie_on_the_great_circle) {
   }
 }
 
-TEST(geo_route_map_legs_and_svg) {
-  Json in = parse(R"({"width":560,"airports":[
+const char* kRoute = R"({"airports":[
     {"icao":"SABE","name":"Buenos Aires Aeroparque","lat":-34.5592,"lon":-58.4156},
     {"icao":"KLYH","name":"Lynchburg Regional","lat":37.3267,"lon":-79.2004},
-    {"icao":"KABE","name":"Lehigh Valley Intl","lat":40.6522,"lon":-75.4408}]})");
-  Json r = fc::routeMap(in);
+    {"icao":"KABE","name":"Lehigh Valley Intl","lat":40.6522,"lon":-75.4408}]})";
+
+TEST(geo_route_legs_view_and_arcs) {
+  Json r = fc::routeGeometry(parse(kRoute));
   CHECK_EQ(r.at("legs").items().size(), std::size_t(2));
   const Json& l1 = r.at("legs").at(std::size_t(0));
   const Json& l2 = r.at("legs").at(std::size_t(1));
@@ -455,16 +456,58 @@ TEST(geo_route_map_legs_and_svg) {
   CHECK(l2.at("nm").asNumber() > 255 && l2.at("nm").asNumber() < 275);
   CHECK(l2.at("course").asNumber() > 38 && l2.at("course").asNumber() < 42);    // north-north-east
   CHECK(std::fabs(r.at("totalNm").asNumber() - (l1.at("nm").asNumber() + l2.at("nm").asNumber())) < 0.2);
-  const std::string& svg = r.at("svg").asString();
-  CHECK(svg.rfind("<svg", 0) == 0);
-  CHECK(has(svg, "fca-grid"));
-  CHECK(has(svg, "fca-equator"));
-  CHECK_EQ(static_cast<int>(std::count(svg.begin(), svg.end(), '\n')), 0);
-  std::size_t arcs = 0, pos = 0;
-  while ((pos = svg.find("class=\"fca-arc\"", pos)) != std::string::npos) ++arcs, ++pos;
-  CHECK_EQ(arcs, std::size_t(2));
-  CHECK(has(svg, ">SABE<"));
-  CHECK(has(svg, "Coordinates approximate"));
+  CHECK(!r.find("svg"));  // the map is drawn in the browser now
+
+  // The first view is halfway between the two ends of the route (about 3 N, 66.6 W).
+  fc::LatLon mid = fc::intermediatePoint({-34.5592, -58.4156}, {40.6522, -75.4408}, 0.5);
+  CHECK(std::fabs(r.at("view").at("lat").asNumber() - mid.lat) < 0.05);
+  CHECK(std::fabs(r.at("view").at("lon").asNumber() - mid.lon) < 0.05);
+  CHECK(r.at("view").at("lat").asNumber() > 2 && r.at("view").at("lat").asNumber() < 4);
+  CHECK(r.at("view").at("lon").asNumber() > -68 && r.at("view").at("lon").asNumber() < -65);
+
+  // One arc per leg, 65 samples each (64 steps), ending on the airports and lying on the great circle.
+  CHECK_EQ(r.at("arcs").items().size(), std::size_t(2));
+  const fc::LatLon ends[3] = {{-34.5592, -58.4156}, {37.3267, -79.2004}, {40.6522, -75.4408}};
+  for (std::size_t leg = 0; leg < 2; ++leg) {
+    const Json& arc = r.at("arcs").at(leg);
+    CHECK_EQ(arc.items().size(), std::size_t(65));
+    auto at = [&](std::size_t i) { return fc::LatLon{arc.at(i).at(std::size_t(0)).asNumber(), arc.at(i).at(std::size_t(1)).asNumber()}; };
+    CHECK(std::fabs(at(0).lat - ends[leg].lat) < 1e-3 && std::fabs(at(0).lon - ends[leg].lon) < 1e-3);
+    CHECK(std::fabs(at(64).lat - ends[leg + 1].lat) < 1e-3 && std::fabs(at(64).lon - ends[leg + 1].lon) < 1e-3);
+    double whole = fc::distanceNm(ends[leg], ends[leg + 1]);
+    for (std::size_t i = 0; i <= 64; ++i) {
+      fc::LatLon pt = at(i);
+      CHECK(std::isfinite(pt.lat) && std::isfinite(pt.lon));
+      CHECK(std::fabs(fc::distanceNm(ends[leg], pt) + fc::distanceNm(pt, ends[leg + 1]) - whole) < 0.5);
+    }
+  }
+}
+
+TEST(geo_route_guards_bad_input) {
+  // No NaN for identical points; antipodal and out-of-range input are refused with a message.
+  Json same = parse(fc::call("geo.route", R"({"airports":[{"icao":"A","lat":10,"lon":20},{"icao":"B","lat":10,"lon":20}]})"));
+  CHECK(same.at("ok").asBool());
+  CHECK_EQ(same.at("result").at("legs").at(std::size_t(0)).at("nm").asNumber(), 0.0);
+  CHECK(std::isfinite(same.at("result").at("arcs").at(std::size_t(0)).at(std::size_t(10)).at(std::size_t(0)).asNumber()));
+  CHECK(!parse(fc::call("geo.route", R"({"airports":[{"icao":"A","lat":10,"lon":20},{"icao":"B","lat":-10,"lon":-160}]})")).at("ok").asBool());
+  CHECK(!parse(fc::call("geo.route", R"({"airports":[{"icao":"A","lat":91,"lon":0},{"icao":"B","lat":0,"lon":10}]})")).at("ok").asBool());
+  CHECK(!parse(fc::call("geo.route", R"({"airports":[{"icao":"A","lat":0,"lon":181},{"icao":"B","lat":0,"lon":10}]})")).at("ok").asBool());
+  CHECK(!parse(fc::call("geo.route", R"({"airports":[{"icao":"A","lat":"x","lon":0},{"icao":"B","lat":0,"lon":10}]})")).at("ok").asBool());
+  // The sample count is clamped, never trusted.
+  Json few = parse(fc::call("geo.route", R"({"samples":-5,"airports":[{"icao":"A","lat":0,"lon":0},{"icao":"B","lat":0,"lon":10}]})"));
+  CHECK_EQ(few.at("result").at("arcs").at(std::size_t(0)).items().size(), std::size_t(9));
+  Json many = parse(fc::call("geo.route", R"({"samples":1e30,"airports":[{"icao":"A","lat":0,"lon":0},{"icao":"B","lat":0,"lon":10}]})"));
+  CHECK_EQ(many.at("result").at("arcs").at(std::size_t(0)).items().size(), std::size_t(257));
+}
+
+TEST(geo_intermediate_point_has_no_nan_at_the_poles_of_the_problem) {
+  fc::LatLon a{10, 20};
+  CHECK(std::isfinite(fc::intermediatePoint(a, a, 0.5).lat));
+  fc::LatLon anti{-10, -160};
+  fc::LatLon p = fc::intermediatePoint(a, anti, 0.5);
+  CHECK(std::isfinite(p.lat) && std::isfinite(p.lon));
+  CHECK(fc::isAntipodal(a, anti));
+  CHECK(!fc::isAntipodal(a, {10, 21}));
 }
 
 TEST(weather_api_ops_round_trip) {

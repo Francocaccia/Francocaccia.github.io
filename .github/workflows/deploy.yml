@@ -43,6 +43,9 @@ jobs:
       - name: C++ tests (WebAssembly build, run under Node)
         run: npm test
 
+      - name: TypeScript tests (globe projection and clipping, against d3-geo)
+        run: npm run test:ts
+
       # Optional repository secret PRIVATE_TERMS: comma-separated names that must never appear on the site.
       - name: Build site
         run: npm run build

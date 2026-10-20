@@ -154,7 +154,18 @@ Json opWindComponents(const Json& in) { return windComponents(in); }
 // input: {airports:[{icao,name,lat,lon}], width?, height?, idPrefix?}
 Json opGeoRoute(const Json& in) {
   if (!in.at("airports").isArray() || in.at("airports").items().size() < 2) throw ApiError{"geo.route needs at least two airports"};
-  return routeMap(in);
+  for (const Json& a : in.at("airports").items()) {
+    if (!a.at("lat").isNumber() || !a.at("lon").isNumber()) throw ApiError{"geo.route: every airport needs a numeric lat and lon"};
+    double lat = a.at("lat").asNumber(), lon = a.at("lon").asNumber();
+    if (!(lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180)) throw ApiError{"geo.route: lat must be -90..90 and lon -180..180"};
+  }
+  const auto& airports = in.at("airports").items();
+  for (std::size_t i = 0; i + 1 < airports.size(); ++i) {
+    LatLon a{airports[i].at("lat").asNumber(), airports[i].at("lon").asNumber()};
+    LatLon b{airports[i + 1].at("lat").asNumber(), airports[i + 1].at("lon").asNumber()};
+    if (isAntipodal(a, b)) throw ApiError{"geo.route: a leg between antipodal points has no single great circle"};
+  }
+  return routeGeometry(in);
 }
 
 const std::map<std::string, Handler>& handlers() {

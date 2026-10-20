@@ -1,12 +1,34 @@
-// Scans the built site (dist/) for the private names, so a name that slipped into any page, script or
-// data file fails the build. Terms come from $PRIVATE_TERMS (comma separated) and the untracked
+// Checks the built site (dist/): size budgets and a few things that must hold on every build (the Aviation page
+// has one globe and no stale map text), then scans it for the private names, so a name that slipped into any
+// page, script or data file fails the build. Terms come from $PRIVATE_TERMS (comma separated) and the untracked
 // .private-terms file, as in check-data.mjs. In CI (CI=true) an empty list is an error: the check must
 // never pass just because the secret was not set.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
 import { dirname, join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+// ---- budgets and invariants ---------------------------------------------------------------------------------
+const problems = [];
+const worldFile = join(root, 'src', 'data', 'world-110m.json');
+if (existsSync(worldFile)) {
+  const gz = gzipSync(readFileSync(worldFile)).length;
+  if (gz > 20 * 1024) problems.push(`world-110m.json is ${gz} bytes gzipped (limit 20 KB)`);
+}
+const aviation = join(root, 'dist', 'aviation', 'index.html');
+if (existsSync(aviation)) {
+  const html = readFileSync(aviation, 'utf8');
+  const globes = (html.match(/class="globe-svg"/g) ?? []).length;
+  if (globes !== 1) problems.push(`aviation page has ${globes} globe SVGs (expected exactly 1)`);
+  if (/Coordinates approximate/.test(html)) problems.push('aviation page still says "Coordinates approximate"');
+  if (html.length > 90 * 1024) problems.push(`aviation page is ${html.length} bytes (budget 90 KB)`);
+}
+if (problems.length) {
+  for (const p of problems) console.error(`  ERROR  ${p}`);
+  process.exit(1);
+}
+
 const forbidden = (process.env.PRIVATE_TERMS ?? '').split(',');
 const termsFile = join(root, '.private-terms');
 if (existsSync(termsFile)) forbidden.push(...readFileSync(termsFile, 'utf8').split(/\r?\n/));

@@ -8,6 +8,9 @@ import BotTiles from '../../components/BotTiles.astro';
 import { site, real, opt } from '../../lib/site';
 import { coreCall } from '../../lib/core';
 import { stationWeather, utcStamp, ageText, STALE_MS } from '../../lib/weather';
+import { decodeWorld, renderGlobeSvg, type LonLat, type WorldFile } from '../../lib/globe';
+import worldFile from '../../data/world-110m.json';
+import worldUrl from '../../data/world-110m.json?url';
 
 interface Metar {
   ok: boolean;
@@ -16,7 +19,8 @@ interface Metar {
   wind: { present: boolean; calm: boolean; variable: boolean; dir: number | null; speedKt: number | null; gustKt: number | null };
 }
 interface RouteResult {
-  svg: string;
+  view: { lat: number; lon: number };
+  arcs: [number, number][][]; // per leg, [lat, lon] samples
   legs: { from: string; to: string; nm: number; km: number; course: number }[];
   totalNm: number;
 }
@@ -33,9 +37,12 @@ const bot = site.bot;
 const filedOn = new Date(now).toISOString().slice(0, 10);
 
 // --- Route (items 13, 15, 16) ----------------------------------------------------------------
-const routeOf = (width: number, id: string) => coreCall<RouteResult>('geo.route', { airports: site.airports, width, height: width, idPrefix: id });
-const routeWide = await routeOf(560, 'fca-w');
-const routeNarrow = await routeOf(340, 'fca-n');
+const route = await coreCall<RouteResult>('geo.route', { airports: site.airports });
+// The static globe: first view from the C++ core, drawn by the same TypeScript the interactive globe uses.
+const world = decodeWorld(worldFile as WorldFile);
+const arcs: LonLat[][] = route.arcs.map((arc) => arc.map(([lat, lon]): LonLat => [lon, lat]));
+const GLOBE_SIZE = 420;
+const globeSvg = renderGlobeSvg(world, { view: route.view, zoom: 1, width: GLOBE_SIZE, height: GLOBE_SIZE, airports: site.airports, arcs, simplify: 2.6 });
 const airports = Object.fromEntries(site.airports.map((a) => [a.icao, a]));
 const [departure, ...rest] = site.airports;
 const destination = rest[rest.length - 1];
@@ -74,6 +81,9 @@ const resume = real(site.resume);
   title="Aviation view"
   description={`${site.name}: aviation view with a route map, METAR and TAF decoders, a crosswind calculator and a pilot card.`}
 >
+  <script is:inline>
+    document.documentElement.classList.add('js');
+  </script>
   <div class="wrap av" data-av data-winds={JSON.stringify(windByStation)} data-examples={JSON.stringify(av.examples)}>
     <article class="sheet" aria-labelledby="title">
       <!-- Header -->
@@ -119,12 +129,12 @@ const resume = real(site.resume);
           <div class="sub-cell">
             <p class="lbl"><span class="no">13</span> Departure aerodrome</p>
             <p class="val">{departure.icao}</p>
-            <p class="sub">{departure.name}<br />{departure.role.toUpperCase()} · {fmtLat(departure.lat)} {fmtLon(departure.lon)}, APPROX.</p>
+            <p class="sub">{departure.name}<br />{departure.role.toUpperCase()} · {fmtLat(departure.lat)} {fmtLon(departure.lon)}, ROUNDED</p>
           </div>
           <div class="sub-cell">
             <p class="lbl"><span class="no">16</span> Destination aerodrome</p>
             <p class="val">{destination.icao}</p>
-            <p class="sub">{destination.name}<br />{destination.role.toUpperCase()} · {fmtLat(destination.lat)} {fmtLon(destination.lon)}, APPROX.</p>
+            <p class="sub">{destination.name}<br />{destination.role.toUpperCase()} · {fmtLat(destination.lat)} {fmtLon(destination.lon)}, ROUNDED</p>
           </div>
           <div class="sub-cell">
             <p class="lbl"><span class="no">15</span> Route legs</p>
@@ -140,7 +150,7 @@ const resume = real(site.resume);
                 </thead>
                 <tbody>
                   {
-                    routeWide.legs.map((l) => (
+                    route.legs.map((l) => (
                       <tr>
                         <th scope="row">{l.from} to {l.to}</th>
                         <td class="num">{nm(l.nm)} NM</td>
@@ -150,7 +160,7 @@ const resume = real(site.resume);
                   }
                   <tr class="total">
                     <th scope="row">Total</th>
-                    <td class="num">{nm(routeWide.totalNm)} NM</td>
+                    <td class="num">{nm(route.totalNm)} NM</td>
                     <td></td>
                   </tr>
                 </tbody>
@@ -161,10 +171,38 @@ const resume = real(site.resume);
         <div class="cell c8">
           <p class="lbl"><span class="no">15</span> Route</p>
           <p class="val route">{routeString}</p>
-          <div class="rv map">
-            <div class="rv-wide" set:html={routeWide.svg} />
-            <div class="rv-narrow" set:html={routeNarrow.svg} />
-          </div>
+          <figure
+            class="globe"
+            data-globe
+            data-view-lat={route.view.lat}
+            data-view-lon={route.view.lon}
+            data-airports={JSON.stringify(site.airports.map((a) => ({ icao: a.icao, name: a.name, lat: a.lat, lon: a.lon })))}
+            data-arcs={JSON.stringify(arcs)}
+            data-world-url={worldUrl}
+          >
+            <div
+              class="globe-stage"
+              data-globe-stage
+              role="img"
+              aria-label={`Route map, ${routeString}. Static view.`}
+              set:html={globeSvg}
+            />
+            <div class="globe-controls" role="group" aria-label="Globe controls">
+              <button type="button" class="gbtn" data-globe-act="up" aria-label="Rotate north">&uarr;</button>
+              <button type="button" class="gbtn" data-globe-act="left" aria-label="Rotate west">&larr;</button>
+              <button type="button" class="gbtn" data-globe-act="right" aria-label="Rotate east">&rarr;</button>
+              <button type="button" class="gbtn" data-globe-act="down" aria-label="Rotate south">&darr;</button>
+              <button type="button" class="gbtn" data-globe-act="in" aria-label="Zoom in">+</button>
+              <button type="button" class="gbtn" data-globe-act="out" aria-label="Zoom out">&minus;</button>
+              <button type="button" class="gbtn gbtn-wide" data-globe-act="reset">Reset view</button>
+            </div>
+            <p class="visually-hidden" role="status" aria-live="polite" data-globe-status></p>
+            <figcaption class="globe-cap">
+              <span class="no-js">Static view. Turn on JavaScript to rotate.</span>
+              <span class="js-only">Drag or use the arrow keys to rotate; plus and minus zoom. </span>
+              The route is a great circle, and the distances in the table are haversine on a sphere. Outlines are simplified Natural Earth 1:110m (public domain). Airport positions are reference points rounded to 4 decimals.
+            </figcaption>
+          </figure>
           <ul class="aprts">
             {
               site.airports.map((a) => (
@@ -444,5 +482,6 @@ const resume = real(site.resume);
 
 <script>
   import '../../scripts/aviation';
+  import '../../scripts/globe';
   import '../../scripts/bot-tiles';
 </script>

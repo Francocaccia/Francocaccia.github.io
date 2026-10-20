@@ -655,22 +655,6 @@ table.legs,
   height: auto;
 }
 
-.map {
-  max-width: 560px;
-  margin: 0 auto;
-}
-
-/* Route map */
-.fca-disc { fill: var(--paper); stroke: var(--frame); stroke-width: 1.5; }
-.fca-grid { fill: none; stroke: #c9ced8; stroke-width: 1; }
-.fca-equator { fill: none; stroke: #8a94a6; stroke-width: 1.3; }
-.fca-tick { fill: var(--fg-muted); font-family: var(--font-mono); }
-.fca-arc { fill: none; stroke: var(--red); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-.fca-arrow { fill: var(--red); }
-.fca-apt { fill: var(--ink); stroke: var(--paper); stroke-width: 2; }
-.fca-label { fill: var(--ink); font-family: var(--font-mono); font-weight: 700; paint-order: stroke; stroke: var(--paper); stroke-width: 3px; }
-.fca-note { fill: var(--fg-muted); font-family: var(--font-mono); }
-
 /* Weather briefing */
 .station h3 {
   font-size: 0.75rem;
@@ -1087,11 +1071,6 @@ button:disabled {
   border-top: 1px solid var(--frame);
 }
 
-.map {
-  max-width: 420px;
-  margin-top: 12px;
-}
-
 .cell > .scroll {
   margin-top: 8px;
 }
@@ -1106,9 +1085,7 @@ button:disabled {
 .when,
 .tl-tick,
 .tl-label,
-.tl-label-out,
-.fca-tick,
-.fca-note {
+.tl-label-out {
   font-family: var(--font-body);
   font-variant-numeric: tabular-nums;
 }
@@ -1116,3 +1093,93 @@ button:disabled {
 .legs tbody th {
   white-space: normal;
 }
+
+/* The globe */
+.globe {
+  margin: 12px auto 0;
+  max-width: 420px;
+}
+
+.globe-stage {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  outline-offset: 2px;
+}
+
+html.js .globe[data-ready] .globe-stage {
+  cursor: grab;
+}
+
+.globe-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.globe-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.globe-sea { fill: var(--map-sea); }
+.globe-grid { fill: none; stroke: var(--map-grid); stroke-width: 0.8; }
+.globe-equator { fill: none; stroke: var(--map-equator); stroke-width: 1; }
+.globe-land { fill: var(--bg-hover); stroke: var(--ink); stroke-width: 0.9; stroke-linejoin: round; }
+.globe-border { fill: none; stroke: var(--placeholder); stroke-width: 0.6; stroke-dasharray: 2 2; }
+.globe-arc { fill: none; stroke: var(--red); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.globe-arrow { fill: var(--red); }
+.globe-rim { fill: none; stroke: var(--frame); stroke-width: 1.5; }
+.globe-apt { fill: var(--ink); stroke: var(--paper); stroke-width: 2; }
+.globe-leader { stroke: var(--ink); stroke-width: 0.8; }
+.globe-label,
+.globe-chip,
+.globe-country {
+  font-family: var(--font-body);
+  font-size: 12px;
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.globe-label { fill: var(--ink); font-family: var(--font-mono); font-weight: 700; font-size: 13px; }
+.globe-chip { fill: var(--red); font-family: var(--font-mono); font-weight: 700; }
+.globe-country { fill: var(--fg-muted); letter-spacing: 0.04em; font-size: 11.5px; text-transform: uppercase; }
+
+.globe-controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(44px, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.gbtn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.gbtn:hover { background: var(--band); }
+.gbtn-wide { grid-column: span 2; font-size: 0.8125rem; }
+
+.globe-cap {
+  margin-top: 8px;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+/* Without JavaScript the globe is a picture: no controls, and the caption says so. */
+html:not(.js) .globe-controls,
+html:not(.js) .js-only { display: none; }
+html.js .no-js { display: none; }
