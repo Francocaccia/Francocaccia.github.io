@@ -13,6 +13,7 @@
     "check:data": "node scripts/check-data.mjs",
     "fetch:metar": "node scripts/fetch-metar.mjs",
     "check:links": "node scripts/check-links.mjs",
+    "check:dist": "node scripts/check-dist.mjs",
     "predev": "node scripts/build-wasm.mjs --if-stale",
     "dev": "astro dev",
     "prebuild": "node scripts/build-wasm.mjs --if-stale && node scripts/check-data.mjs",

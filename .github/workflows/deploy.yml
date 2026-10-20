@@ -3,6 +3,7 @@ name: Build and deploy
 on:
   push:
     branches: [main]
+  pull_request: # builds and tests only; the deploy job below does not run for pull requests
   workflow_dispatch:
 
 permissions:
@@ -11,8 +12,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -51,12 +52,19 @@ jobs:
       - name: Check internal links and anchors
         run: npm run check:links
 
+      # Fails if a private name is in the built site, or if the secret is empty.
+      - name: Check the built site for private names
+        run: npm run check:dist
+        env:
+          PRIVATE_TERMS: ${{ secrets.PRIVATE_TERMS }}
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
