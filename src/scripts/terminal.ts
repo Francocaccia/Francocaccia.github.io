@@ -38,13 +38,22 @@ async function start(root: HTMLElement) {
   if (cheat && matchMedia('(min-width: 900px)').matches) cheat.open = true;
 
   const site = JSON.parse(document.getElementById('term-site')!.textContent!);
-  await afterLoad(); // the first screen is already on the page; let fonts and styles finish before the 280 KB core
-  const { coreCall } = await import('../lib/core');
-  await coreCall('term.init', {
-    site,
-    modes: modes.split(',').filter(Boolean),
-    metars: JSON.parse(root.dataset.metars ?? '{}'),
-  });
+  // The first screen is already on the page. The ~125 KB (gzipped) core loads after the page does, and the
+  // command buttons are wired up straight away: a click before the shell is ready waits for it, and says so
+  // if it never comes.
+  let coreCall!: typeof import('../lib/core').coreCall;
+  let isReady = false;
+  let failed = false;
+  const ready = (async () => {
+    await afterLoad();
+    ({ coreCall } = await import('../lib/core'));
+    await coreCall('term.init', {
+      site,
+      modes: modes.split(',').filter(Boolean),
+      metars: JSON.parse(root.dataset.metars ?? '{}'),
+    });
+    isReady = true;
+  })();
 
   let cwd = '~';
   const history: string[] = ['projects', 'stats', 'experience']; // the first screen already ran these
@@ -55,8 +64,6 @@ async function start(root: HTMLElement) {
   let lastTabLine: string | null = null;
 
   const fineCursor = matchMedia('(pointer: fine)').matches;
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  void reduceMotion; // scrolling below is instant either way
 
   const promptText = () => `visitor@portfolio:${cwd}$`;
 
@@ -78,6 +85,12 @@ async function start(root: HTMLElement) {
   function printText(text: string, kind?: string) {
     print([[{ t: text, k: kind }]]);
   }
+
+  ready.catch(() => {
+    failed = true;
+    root.dataset.failed = '';
+    printText('The shell failed to load. Reload the page to try again.', 'error');
+  });
 
   function echo(line: string) {
     const row = document.createElement('div');
@@ -104,14 +117,21 @@ async function start(root: HTMLElement) {
     return { raw, history };
   }
 
+  const cancelKey = root.querySelector<HTMLButtonElement>('[data-key="cancel"]');
+  const showCancel = (on: boolean) => {
+    if (cancelKey) cancelKey.hidden = !on;
+  };
+
   async function fetchStats() {
     pending = new AbortController();
+    showCancel(true);
     userAborted = false;
     const timer = setTimeout(() => pending?.abort(), timeoutMs);
     const { raw, history } = await fetchBot(pending.signal);
     clearTimeout(timer);
     const aborted = userAborted;
     pending = null;
+    showCancel(false);
     if (aborted) return printText('Cancelled.', 'dim');
     const reply = await coreCall<{ lines: TermLine[] }>('term.stats', { stats: raw, trackingSince, history });
     print(reply.lines);
@@ -150,7 +170,7 @@ async function start(root: HTMLElement) {
   async function run(line: string) {
     if (pending) {
       echo(line);
-      return printText('Still waiting for the bot. Press Ctrl+C to cancel.', 'dim');
+      return printText('Still waiting for the bot. Press Ctrl+C, or the Cancel key, to cancel.', 'dim');
     }
     echo(line.length > MAX_LINE ? `${line.slice(0, MAX_LINE)}...` : line);
     const trimmed = line.trim();
@@ -159,7 +179,9 @@ async function start(root: HTMLElement) {
       if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
       historyIndex = history.length;
       draft = '';
+      if (!isReady && !failed) printText('Loading the shell...', 'dim');
       try {
+        await ready;
         const result = await coreCall<ExecResult>('term.exec', {
           line: line.slice(0, MAX_LINE + 1),
           cwd,
@@ -170,13 +192,15 @@ async function start(root: HTMLElement) {
         setCwd(result.cwd);
         for (const action of result.actions) await handle(action);
       } catch {
-        printText('That command could not run.', 'error');
+        // A failed load has already printed its own message.
+        if (!failed) printText('That command could not run.', 'error');
       }
     }
     scrollToEnd();
   }
 
   async function complete() {
+    if (!isReady) return;
     const before = input.value.slice(0, input.selectionStart ?? input.value.length);
     const reply = await coreCall<{ start: number; options: string[] }>('term.complete', { line: before, cwd });
     const { start, options } = reply;
@@ -273,6 +297,10 @@ async function start(root: HTMLElement) {
       else if (key === 'up') recall(-1);
       else if (key === 'down') recall(1);
       else if (key === 'clear') clearScreen();
+      else if (key === 'cancel' && pending) {
+        userAborted = true;
+        pending.abort();
+      }
       input.focus({ preventScroll: true });
     });
   });
@@ -294,11 +322,16 @@ async function start(root: HTMLElement) {
     if (fineCursor && !getSelection()?.toString()) input.focus({ preventScroll: true });
   });
 
-  input.disabled = false;
-  root.dataset.ready = '';
-  setCwd('~');
-  if (fineCursor) input.focus({ preventScroll: true });
-  void refreshStatsBlock().catch(() => {
-    /* the first-screen placeholders stay */
+  // The prompt is not focused automatically: that would skip the skip link and drop a screen-reader user
+  // into the middle of the page. Clicking a command, or the screen, focuses it on desktop.
+  void ready.then(() => {
+    input.disabled = false;
+    root.dataset.ready = '';
+    setCwd('~');
+    void refreshStatsBlock().catch(() => {
+      /* the first-screen placeholders stay */
+    });
+  }).catch(() => {
+    /* reported above */
   });
 }

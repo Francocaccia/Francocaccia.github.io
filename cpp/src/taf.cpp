@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdlib>
 
 #include "clamp.hpp"
 #include "fc/weather.hpp"

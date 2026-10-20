@@ -93,7 +93,7 @@ const prompt = 'visitor@portfolio:~$';
           <div class="term-line term-echo"><span class="ps">{prompt}</span> projects</div>
           <TermLines lines={projects.lines} />
           <div class="term-line term-echo"><span class="ps">{prompt}</span> stats</div>
-          <div data-stats-block><TermLines lines={stats.lines} /></div>
+          <div data-stats-block aria-live="off"><TermLines lines={stats.lines} /></div>
           <div class="term-line term-echo"><span class="ps">{prompt}</span> experience</div>
           <TermLines lines={experience.lines} />
         </div>
@@ -121,6 +121,7 @@ const prompt = 'visitor@portfolio:~$';
           <button type="button" data-key="up" aria-label="Up: previous command">Up</button>
           <button type="button" data-key="down" aria-label="Down: next command">Down</button>
           <button type="button" data-key="clear">Clear</button>
+          <button type="button" data-key="cancel" hidden>Cancel</button>
           <span id="term-hint" class="term-hint">Type help, then press Enter. Tab completes a name. Esc, then Tab, leaves the prompt.</span>
         </div>
       </section>

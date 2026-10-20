@@ -11,18 +11,14 @@
   gap: 16px;
 }
 
-/* Phones: the side panel goes above the terminal. */
-.term-panel {
-  order: -1;
-}
-
+/* The side panel follows the terminal in the page, on phones as well, so reading order, focus order and
+   what is on screen agree. */
 @media (min-width: 900px) {
   .term-layout {
     grid-template-columns: minmax(0, 1fr) 22rem;
     align-items: start;
   }
   .term-panel {
-    order: 0;
     position: sticky;
     top: calc(var(--bar-h) + 16px);
   }
@@ -286,10 +282,11 @@
   }
 }
 
-/* Until the engine has loaded (and without JavaScript) there is nothing to type into. */
+/* Until the engine has loaded (and without JavaScript) there is nothing to type into. The rows keep their
+   space, so nothing jumps when they appear, and visibility keeps them out of the tab order. */
 .term-layout:not([data-ready]) .term-input,
 .term-layout:not([data-ready]) .term-keys {
-  display: none;
+  visibility: hidden;
 }
 
 /* Side panel */
@@ -450,7 +447,7 @@
 /* The first-screen stats block is swapped for live numbers after load. Reserve its worst-case height
    (long lines wrap differently on phones) so the lines below it never move. */
 [data-stats-block] {
-  min-height: calc(14 * 1.55em);
+  min-height: calc(12 * 1.55em);
 }
 
 @media (max-width: 639px) {
@@ -470,9 +467,11 @@
   }
 }
 
-/* Short, single-line labels keep the "Try these" buttons the same height. */
-.try-cmd {
-  white-space: nowrap;
+/* Short, single-line labels keep the "Try these" buttons the same height, where there is room. */
+@media (min-width: 640px) {
+  .try-cmd {
+    white-space: nowrap;
+  }
 }
 
 .cheat summary,
@@ -481,9 +480,10 @@
   font-size: 0.8125rem;
 }
 
-/* More room on wide screens. */
+/* More room on wide screens. The token is on the root so the top bar, the page and the footer all use
+   the same width and stay aligned. */
 @media (min-width: 1200px) {
-  .wrap:has(> .term-layout) {
+  :root[data-theme='terminal'] {
     --measure: 80rem;
   }
 }
