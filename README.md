@@ -3,7 +3,12 @@
 One static site with three presentation modes (aviation, terminal, finance) over a single data file.
 Logic is written in C++20 and compiled to WebAssembly; Astro pre-renders the pages.
 
-See [PLAN.md](PLAN.md) for the architecture, rules and progress.
+## How it is put together
+
+- `src/data/site.json` is the only source of content. The three views (aviation, terminal, finance) and the landing page all render it.
+- `cpp/` holds the logic: a weather decoder (METAR and TAF), a shell, a chart engine, route geometry, a toy blockchain. It is compiled to WebAssembly with Emscripten and also runs at build time, so the pages are pre-rendered from it.
+- `src/lib/globe.ts` draws the Aviation globe from committed Natural Earth data (public domain); `tests/ts` checks it against d3-geo.
+- The bot's results are shown only as percentages, and any illustrative data says so on the page. Weather comes from a snapshot that a scheduled workflow refreshes.
 
 ## Requirements
 
