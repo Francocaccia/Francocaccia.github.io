@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-10-27T15:23:28.641Z",
+  "generatedAt": "2026-10-27T22:17:02.232Z",
   "source": "aviationweather.gov",
   "stations": {
     "KABE": {
-      "raw": "METAR KABE 271451Z VRB03KT 10SM CLR 15/08 A3038 RMK AO2 SLP288 T01500078 51013 $",
-      "observedAt": "2026-10-27T14:51:00.000Z"
+      "raw": "METAR KABE 272151Z 19005KT 10SM CLR 17/04 A3033 RMK AO2 SLP271 T01670044 $",
+      "observedAt": "2026-10-27T21:51:00.000Z"
     },
     "SABE": {
-      "raw": "METAR SABE 271500Z 03005KT 330V110 9999 FEW046 BKN060 16/07 Q1023 NOSIG",
-      "observedAt": "2026-10-27T15:00:00.000Z"
+      "raw": "METAR SABE 272200Z 07006KT CAVOK 17/08 Q1021 NOSIG",
+      "observedAt": "2026-10-27T22:00:00.000Z"
     }
   }
 }
