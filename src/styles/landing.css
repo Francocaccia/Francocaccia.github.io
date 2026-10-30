@@ -81,10 +81,7 @@ main:has(> .landing) {
 
 .hero {
   position: relative;
-  display: grid;
-  align-items: center;
-  min-height: var(--stage-h);
-  padding: 48px var(--gutter) 88px;
+  padding: 40px var(--gutter) 48px;
   isolation: isolate;
   overflow: clip;
 }
@@ -112,38 +109,62 @@ main:has(> .landing) {
 }
 
 .hero-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+  align-items: center;
   width: 100%;
-  max-width: 72rem;
+  max-width: 76rem;
   margin-inline: auto;
+}
+
+@media (min-width: 960px) {
+  .hero {
+    padding-block: 48px 40px;
+  }
+  .hero-inner {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 48px;
+  }
 }
 
 .hero-kicker {
   margin: 0 0 12px;
   color: var(--fg-muted);
   font-family: var(--lp-mono);
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .hero h1 {
-  margin: 0 0 0.25em;
-  font-size: clamp(2.75rem, 9.5vw, 6.5rem);
+  margin: 0 0 0.3em;
+  font-size: clamp(3.25rem, 12vw, 6rem);
   font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+.hero h1 .w {
+  display: block;
+}
+
+.hero h1 .w3 {
+  color: var(--link);
 }
 
 .hero-lead {
-  max-width: 40rem;
-  margin: 0 0 0.5em;
-  font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+  max-width: 34rem;
+  margin: 0 0 8px;
+  font-size: clamp(1.1rem, 2.2vw, 1.375rem);
   line-height: 1.45;
 }
 
 .hero-open {
-  margin: 0 0 28px;
+  max-width: 34rem;
+  margin: 0 0 24px;
   color: var(--fg-muted);
+  font-size: 1.0625rem;
 }
 
 .hero-cta {
@@ -158,52 +179,207 @@ main:has(> .landing) {
   margin: 0;
 }
 
-.scroll-cue {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-left: -22px;
+/* The typing terminal: three real commands from the Terminal view's shell, typed out once (about 4 seconds),
+   and already finished when motion is reduced or paused. */
+.hero-term {
+  min-width: 0;
   border: 1px solid var(--line-strong);
-  border-radius: 50%;
+  border-radius: 12px;
+  background: #000;
+  overflow: hidden;
+  box-shadow: 0 0 0 4px rgb(255 154 31 / 0.06);
+}
+
+.ht-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding-inline: 12px;
+  border-bottom: 1px solid var(--line-strong);
+  background: var(--bg-raised);
   color: var(--fg-muted);
-  text-decoration: none;
+  font-family: var(--lp-mono);
+  font-size: 0.8125rem;
 }
 
-.scroll-cue:hover {
-  color: var(--fg);
-  background: var(--bg-hover);
+.ht-bar i {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--fg-muted);
+  border-radius: 2px;
 }
 
-/* ---- statement ------------------------------------------------------------------------------------------ */
+.ht-bar span {
+  margin-left: 8px;
+}
 
-.statement {
+.ht-body {
+  min-height: 17rem;
+  padding: 14px 16px;
+  color: #ff9a1f;
+  font-family: var(--lp-mono);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+
+.ht-body .ps { color: #b87a30; }
+.ht-cmd { margin: 0; white-space: nowrap; }
+.ht-cmd .typed { color: #ffd9a0; }
+.ht-out { margin: 0 0 10px; }
+.ht-out .term-line { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ht-out .k-dim { color: #b87a30; }
+.ht-out .k-accent,
+.ht-out .k-head { color: #ffc266; font-weight: 600; }
+.ht-out .k-pos { color: #6ee787; }
+.ht-out a { color: #ffc266; }
+
+/* ---- the numbers ---------------------------------------------------------------------------------------- */
+
+.proof-strip {
+  padding: 0 var(--gutter);
+  border-block: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
+.proof-strip ul {
   display: grid;
-  place-items: center;
-  min-height: 70svh;
-  padding: 64px var(--gutter);
-  border-top: 1px solid var(--line);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
 }
 
-.statement-words {
-  margin: 0;
-  font-size: clamp(2.6rem, 11vw, 8rem);
+@media (min-width: 900px) {
+  .proof-strip ul { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+.proof-strip li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 12px 18px 0;
+}
+
+.proof-strip .n {
+  color: var(--fg);
+  font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1;
-  text-align: center;
 }
 
-.statement-words .w {
-  display: block;
+.proof-strip .l {
+  color: var(--fg-muted);
+  font-size: 0.875rem;
+  line-height: 1.35;
 }
 
-.statement-words .w3 {
-  color: var(--link);
+/* ---- ask me anything ------------------------------------------------------------------------------------ */
+
+.ask {
+  padding: 72px var(--gutter) 64px;
 }
+
+.ask-inner {
+  max-width: 56rem;
+  margin-inline: auto;
+}
+
+.ask h2 {
+  margin: 0 0 0.3em;
+  font-size: clamp(1.9rem, 4.4vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.ask-lead {
+  max-width: 40rem;
+  margin: 0 0 24px;
+  color: var(--fg-muted);
+  font-size: 1.0625rem;
+}
+
+.ask-form {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.ask-form input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--fg);
+  font-family: var(--lp-mono);
+  font-size: 1rem;
+}
+
+.ask-form input::placeholder { color: var(--fg-muted); opacity: 1; }
+.ask-form .btn { min-height: 52px; }
+
+.ask-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.chip:hover { background: var(--bg-hover); color: var(--fg); }
+.chip[aria-pressed='true'] { border-color: var(--link); color: var(--link); }
+.chip[hidden] { display: none; }
+
+.ask-out {
+  min-height: 10.5rem;
+  padding: 18px 20px;
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--link);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.ask-out h3 { margin: 0 0 8px; font-size: 1.125rem; }
+.ask-out p { margin: 0 0 12px; }
+.ask-hint { color: var(--fg-muted); }
+.ask-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+
+/* The same answers, as a plain list: all there is without JavaScript, and kept out of sight once the bar works. */
+.ask-list { margin-top: 8px; }
+.ask-item { border-bottom: 1px solid var(--line); }
+.ask-item summary { display: flex; align-items: center; min-height: 48px; cursor: pointer; font-weight: 600; }
+.ask-a { padding: 0 0 14px; color: var(--fg-muted); }
+.ask-a p { margin: 0 0 10px; }
+
+html:not(.js) .ask-form,
+html:not(.js) .ask-chips,
+html:not(.js) .ask-out,
+.ask[data-ready] .ask-list { display: none; }
+
+.work-start { scroll-margin-top: calc(var(--bar-h) + 8px); }
 
 /* ---- chapters ------------------------------------------------------------------------------------------- */
 
@@ -315,7 +491,7 @@ main:has(> .landing) {
   border: 1px solid var(--note);
   color: var(--note);
   font-family: var(--lp-mono);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -362,7 +538,7 @@ main:has(> .landing) {
   margin: 0 0 8px;
   color: var(--fg-muted);
   font-family: var(--lp-mono);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .code {
@@ -456,12 +632,12 @@ main:has(> .landing) {
   font-size: 0.9375rem;
 }
 
-.block dl { margin: 0; font-size: 0.75rem; }
+.block dl { margin: 0; font-size: 0.8125rem; }
 .block dt { margin-top: 4px; color: var(--fg-muted); letter-spacing: 0.04em; text-transform: uppercase; }
 .block dd { margin: 0; overflow-wrap: anywhere; }
 .mono { font-family: var(--lp-mono); }
 .z { color: var(--ok); font-weight: 600; }
-.status { margin: 8px 0 0; font-size: 0.75rem; font-weight: 600; color: var(--ok); }
+.status { margin: 8px 0 0; font-size: 0.8125rem; font-weight: 600; color: var(--ok); }
 .v-t { display: none; }
 
 .chain:has(.tamper-input:checked) .v-ok { display: none; }
@@ -547,7 +723,7 @@ main:has(> .landing) {
 .globe-chip { fill: var(--red); font-weight: 600; }
 
 .metar { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-strong); }
-.metar-meta { margin: 0 0 6px; color: var(--fg-muted); font-family: var(--lp-mono); font-size: 0.75rem; letter-spacing: 0.04em; }
+.metar-meta { margin: 0 0 6px; color: var(--fg-muted); font-family: var(--lp-mono); font-size: 0.8125rem; letter-spacing: 0.04em; }
 .metar-line { margin: 0; font-family: var(--lp-mono); font-size: 0.9375rem; line-height: 1.8; overflow-wrap: anywhere; }
 .mt-stn { color: var(--ink); font-weight: 600; }
 .mt-time { color: #0b5a6b; }
@@ -641,7 +817,7 @@ main:has(> .landing) {
   left: 16px;
   text-align: right;
   font-family: var(--lp-mono);
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -658,7 +834,7 @@ main:has(> .landing) {
   background: #000;
   color: #ff9a1f;
   font-family: var(--lp-mono);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .pv-line { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -669,7 +845,7 @@ main:has(> .landing) {
 .pv-term .k-head { color: #ffc266; font-weight: 600; }
 .pv-term .k-dim { color: #b87a30; }
 
-.pv-avi { background: #fbfaf4; color: #1f2a3c; font-family: var(--lp-mono); font-size: 0.75rem; }
+.pv-avi { background: #fbfaf4; color: #1f2a3c; font-family: var(--lp-mono); font-size: 0.8125rem; }
 .pv-avi .pv-tag { color: #33415a; }
 .pv-metar { line-height: 1.7; overflow-wrap: anywhere; }
 .pv-avi .mt-stn { color: #0b2a5b; font-weight: 600; }
@@ -691,7 +867,7 @@ main:has(> .landing) {
 
 .door-name { font-family: var(--lp-mono); font-size: 1.35rem; font-weight: 600; }
 .door-promise { color: var(--fg); }
-.inside-h { color: var(--fg-muted); font-family: var(--lp-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.inside-h { color: var(--fg-muted); font-family: var(--lp-mono); font-size: 0.8125rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .inside-list { display: flex; flex-direction: column; gap: 2px; color: var(--fg-muted); font-size: 0.875rem; }
 .inside-item::before { content: '· '; }
 .door-go { margin-top: auto; padding-top: 6px; color: var(--link); font-family: var(--lp-mono); font-size: 0.875rem; }
@@ -828,14 +1004,6 @@ main:has(> .landing) {
   html:where(.js):not([data-motion='off']) .chapter.in :is(.fcz-wick, .fcz-body, .code-line, .block, .globe-arc, .plane, .mt, .copy) {
     animation-play-state: running;
   }
-  html:where(.js):not([data-motion='off']) .statement .w {
-    animation: rise 0.7s ease-out both paused;
-  }
-  html:where(.js):not([data-motion='off']) .statement.in .w {
-    animation-play-state: running;
-  }
-  html:where(.js):not([data-motion='off']) .statement .w2 { animation-delay: 0.12s; }
-  html:where(.js):not([data-motion='off']) .statement .w3 { animation-delay: 0.24s; }
 
   /* Scroll-driven: the same keyframes, driven by the chapter's own scroll progress. The stage is pinned
      while the scene plays. cover 28%..72% is the pinned stretch on a desktop; the ranges below sit inside it. */
@@ -959,20 +1127,6 @@ main:has(> .landing) {
       animation-play-state: running;
     }
 
-    /* The three words of the statement come in as the band scrolls through. */
-    html:not([data-motion='off']) .statement .w {
-      animation-name: rise;
-      animation-duration: auto;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-      animation-play-state: running;
-      animation-timeline: view();
-      animation-delay: 0s;
-    }
-    html:not([data-motion='off']) .statement .w1 { animation-range: entry 5% entry 55%; }
-    html:not([data-motion='off']) .statement .w2 { animation-range: entry 20% entry 70%; }
-    html:not([data-motion='off']) .statement .w3 { animation-range: entry 35% entry 85%; }
-
     /* The hero background slides a little as the page scrolls away from it. */
     html:not([data-motion='off']) .hero-bg {
       animation-name: drift, fade;
@@ -1000,4 +1154,52 @@ html[data-motion='off'] .ticker-track {
   .motion-toggle,
   .ticker { display: none !important; }
   .chapter { height: auto !important; }
+}
+
+/* ---- landing v2 additions ------------------------------------------------------------------------------- */
+
+.door-kicker {
+  color: var(--fg-muted);
+  font-family: var(--lp-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Running small text is 14px; labels and tags are 13px. */
+.note,
+.chain-cap,
+.hf-formula,
+.hf-params,
+.metar-meta,
+.file,
+.mini-term,
+.block dl,
+.legend {
+  font-size: 0.875rem;
+}
+
+.motion-toggle {
+  right: 12px;
+  left: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The three commands type out one after the other: about 4 seconds in all. Paused or reduced motion shows them finished. */
+  html:not([data-motion='off']) .ht-block {
+    --start: calc(var(--b) * 1.4s + 0.4s);
+  }
+  html:not([data-motion='off']) .ht-cmd {
+    animation: fade 0.01s both;
+    animation-delay: var(--start);
+  }
+  html:not([data-motion='off']) .ht-cmd .typed {
+    display: inline-block;
+    animation: type 0.6s steps(14, end) both;
+    animation-delay: var(--start);
+  }
+  html:not([data-motion='off']) .ht-out {
+    animation: fade 0.35s ease-out both;
+    animation-delay: calc(var(--start) + 0.65s);
+  }
 }

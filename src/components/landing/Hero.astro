@@ -1,37 +1,64 @@
 ---
-// The first screen: the name, what I do, and the ways forward. The primary link is always there; the
-// "Continue in ..." chip (revealed by mode.ts for a returning visitor) only adds to it.
+// The first screen. It says what I do and what I am looking for, gives one main action and one second one, and
+// shows a terminal that types out three real commands from the shell the Terminal view runs. The three words
+// are the same ones as the Finance view's headline, in site.json.
+import TermLines from '../TermLines.astro';
 import { site, real, withBase } from '../../lib/site';
 import { enabledModes } from '../../config';
 
+type Span = { t: string; k?: string; h?: string; c?: string };
+interface Props {
+  blocks: { cmd: string; lines: Span[][] }[];
+}
+
+const { blocks } = Astro.props;
 const modes = enabledModes();
 const resume = real(site.resume);
-const email = real(site.email);
+const [w1, w2, w3] = site.finance.headline;
+const [atb, , defi] = site.projects;
 ---
 
 <header class="hero" aria-labelledby="hero-h">
   <div class="hero-bg" aria-hidden="true"></div>
   <div class="hero-inner">
-    <p class="hero-kicker">{site.location}</p>
-    <h1 id="hero-h">{site.name}</h1>
-    <p class="hero-lead">{site.positioning}</p>
-    <p class="hero-open">{site.openTo}</p>
-    <p class="hero-cta">
-      <a class="btn btn-primary" href="#views">Choose a view</a>
-      {resume && <a class="btn" href={withBase(resume)}>Resume (PDF)</a>}
-      {email ? <a class="btn" href={`mailto:${email}`}>Contact</a> : <a class="btn" href="#contact">Contact</a>}
-    </p>
-    <p class="continue" data-continue-slot>
-      {
-        modes.map((m) => (
-          <a class="chip" href={withBase(m.path)} data-mode={m.id} data-continue-for={m.id} hidden>
-            Continue in {m.label}
-          </a>
-        ))
-      }
-    </p>
+    <div class="hero-copy">
+      <p class="hero-kicker">{site.name} · {site.location}</p>
+      <h1 id="hero-h">
+        <span class="w">{w1}</span>
+        <span class="w">{w2}</span>
+        <span class="w w3">{w3}</span>
+      </h1>
+      <p class="hero-lead">
+        I build a trading bot, a lending protocol and a C++ core. {site.positioning.split('. ').slice(1).join('. ')}
+      </p>
+      <p class="hero-open">{site.openTo}</p>
+      <p class="hero-cta">
+        {resume && <a class="btn btn-primary" href={withBase(resume)}>View resume (PDF)</a>}
+        <a class="btn" href="#work">See the work</a>
+      </p>
+      <p class="continue" data-continue-slot>
+        {
+          modes.map((m) => (
+            <a class="chip" href={withBase(m.path)} data-mode={m.id} data-continue-for={m.id} hidden>
+              Continue in {m.label}
+            </a>
+          ))
+        }
+      </p>
+    </div>
+
+    <div class="hero-term" role="img" aria-label={`A terminal running three real commands: ${blocks.map((b) => b.cmd).join(', ')}.`}>
+      <div class="ht-bar" aria-hidden="true"><i></i><i></i><i></i><span>visitor@portfolio: ~</span></div>
+      <div class="ht-body" aria-hidden="true">
+        {
+          blocks.map((b, i) => (
+            <div class="ht-block" style={`--b:${i}`}>
+              <p class="ht-cmd"><span class="ps">visitor@portfolio:~$</span> <span class="typed">{b.cmd}</span></p>
+              <div class="ht-out"><TermLines lines={b.lines} /></div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
   </div>
-  <a class="scroll-cue" href="#story" aria-label="Scroll to the story">
-    <span aria-hidden="true">&darr;</span>
-  </a>
 </header>

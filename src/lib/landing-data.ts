@@ -76,10 +76,10 @@ export function codeExcerpt() {
 export async function terminalPreview(modes: string[]) {
   await coreCall('term.init', { site, modes, metars: {}, files: false });
   const run = (line: string) => coreCall<{ lines: Span[][] }>('term.exec', { line, cwd: '~', history: [line], now: 0 });
-  const [projects, about] = await Promise.all([run('projects'), run('cat about.md')]);
+  const [projects, about, licenses] = await Promise.all([run('projects'), run('cat about.md'), run('licenses')]);
   // The landing page has no shell behind it, so clickable commands become plain text.
   const plain = (lines: Span[][]) => lines.map((line) => line.map((s) => (s.k === 'cmd' ? { t: s.t } : s)));
-  return { projects: plain(projects.lines.slice(0, 6)), about: plain(about.lines.slice(0, 3)) };
+  return { projects: plain(projects.lines.slice(0, 6)), about: plain(about.lines.slice(0, 3)), licenses: plain(licenses.lines.slice(0, 4)) };
 }
 
 // ---- aviation: the route and the METAR ------------------------------------------------------------------

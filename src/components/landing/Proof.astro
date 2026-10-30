@@ -1,0 +1,18 @@
+---
+// Five facts, right under the first screen. They are the "highlights" in site.json, each with its source, so
+// nothing here is typed by hand.
+import { site } from '../../lib/site';
+---
+
+<section class="proof-strip" aria-label="By the numbers">
+  <ul>
+    {
+      site.highlights.map((h) => (
+        <li>
+          <span class="n">{h.value}</span>
+          <span class="l">{h.label}</span>
+        </li>
+      ))
+    }
+  </ul>
+</section>

@@ -1,9 +1,12 @@
 ---
 // Landing page. Composition only: every number, name and sentence comes from site.json or from the C++ core
-// at build time. The scenes are decoration that moves with the scroll where the browser supports it, and
-// finished still frames everywhere else (no JavaScript needed to read any of it).
+// at build time. First screen and numbers, an "ask" bar with pre-written answers, the three views, then four
+// scroll scenes. The scenes are decoration that moves with the scroll where the browser supports it, and
+// finished still frames everywhere else; nothing needs JavaScript to be read.
 import LandingLayout from '../layouts/LandingLayout.astro';
 import Hero from '../components/landing/Hero.astro';
+import Proof from '../components/landing/Proof.astro';
+import Ask from '../components/landing/Ask.astro';
 import Chapter from '../components/landing/Chapter.astro';
 import SceneFinance from '../components/landing/SceneFinance.astro';
 import SceneCode from '../components/landing/SceneCode.astro';
@@ -16,6 +19,7 @@ import { site, withBase } from '../lib/site';
 import { enabledModes } from '../config';
 import { previewCandles } from '../lib/charts';
 import { personJsonLd } from '../lib/person-jsonld';
+import { faq } from '../lib/landing-faq';
 import { chainScene, codeExcerpt, financeScene, flightScene, metarPreview, terminalPreview } from '../lib/landing-data';
 
 const modes = enabledModes();
@@ -28,15 +32,21 @@ const [finance, term, flight, doorCandles, chain] = await Promise.all([
 ]);
 const code = codeExcerpt();
 const metar = metarPreview();
+const answers = faq();
 
 const stat = (id: string) => {
   const h = site.highlights.find((x) => x.id === id);
   if (!h) throw new Error(`landing: no highlight "${id}" in site.json`);
   return { value: h.value, label: h.label };
 };
-const [atb, , defi, mev] = site.projects;
-const firstSentence = (text: string) => text.split('. ')[0].replace(/\.$/, '') + '.';
-const [w1, w2, w3] = site.finance.headline;
+const [atb, sqr, defi, mev] = site.projects;
+// The last risk control is the principle itself ("limits live in code"), so the limits are the ones before it.
+const limits = site.bot.riskControls.filter((r) => r !== site.finance.quote).length;
+const heroBlocks = [
+  { cmd: 'cat about.md', lines: term.about },
+  { cmd: 'projects', lines: term.projects.slice(0, 5) },
+  { cmd: 'licenses', lines: term.licenses },
+];
 ---
 
 <LandingLayout title="Quant, software developer and pilot" description={`${site.name}: ${site.positioning} ${site.openTo}`}>
@@ -48,23 +58,22 @@ const [w1, w2, w3] = site.finance.headline;
     } catch (e) {}
   </script>
   <div class="landing">
-    <Hero />
+    <!-- First in the page, so a keyboard user can pause the motion before reaching anything that moves. -->
+    <MotionToggle />
+    <Hero blocks={heroBlocks} />
+    <Proof />
+    <Ask answers={answers} />
+    <Doors candles={doorCandles.svg} about={term.about} metar={metar} />
 
-    <section class="statement" id="story" aria-label="What I do">
-      <p class="statement-words">
-        <span class="w w1">{w1}</span>
-        <span class="w w2">{w2}</span>
-        <span class="w w3">{w3}</span>
-      </p>
-    </section>
+    <div class="work-start" id="work"></div>
 
     <Chapter
       scene="finance"
       id="ch-finance"
       kicker="01 · Finance"
-      title={site.finance.quote}
-      lede={`${firstSentence(atb.summary)} Benchmarked against the S&P 500 and a 60/40 portfolio, on paper only.`}
-      stat={stat('fund-beta')}
+      title={`${atb.name}: a portfolio manager with ${limits} limits written in code`}
+      lede={`${atb.summary.split('. ')[0]}. Benchmarked against the S&P 500 and a 60/40 portfolio, on paper only. Its results are shown as percentages, and the chart here is made-up data.`}
+      stat={{ value: String(limits), label: 'risk limits, enforced in code' }}
       cta={{ href: withBase('/finance/'), label: 'Read the finance view', mode: 'finance' }}
     >
       <SceneFinance data={finance} />
@@ -74,8 +83,8 @@ const [w1, w2, w3] = site.finance.headline;
       scene="terminal"
       id="ch-code"
       kicker="02 · Code"
-      title="Logic in C++, pages in Astro."
-      lede="The pages are static. The logic behind them (a weather decoder, a chart engine, the shell in the terminal view) is C++ compiled to WebAssembly. What you see here is built from it."
+      title="Ticker in, two-page report out: 5+ hours saved a week"
+      lede={`${sqr.name} turns a ticker into a two-page PDF for a student-managed fund. This site runs on code too: a C++ core compiled to WebAssembly, with the weather decoder, the chart engine and the shell in the terminal view.`}
       stat={stat('hours-saved')}
       cta={{ href: withBase('/terminal/'), label: 'Open the terminal view', mode: 'terminal' }}
     >
@@ -85,12 +94,12 @@ const [w1, w2, w3] = site.finance.headline;
     <Chapter
       scene="chain"
       id="ch-crypto"
-      pin={false}
       kicker="03 · Crypto"
-      title="Lending math, tested to 100% coverage."
-      lede={`${firstSentence(defi.summary)} Below, a toy chain and a health-factor slider show the ideas, not a product.`}
+      title="A lending protocol, tested to 100% coverage"
+      pin={false}
+      lede={`${defi.summary.split('. ')[0]}. Its fuzz, invariant and fork tests reach 100% coverage. Educational, not audited. Below, a toy chain and a health-factor slider show the ideas, not a product.`}
       stat={stat('defi-coverage')}
-      cta={{ href: defi.repo, label: 'See the lending protocol on GitHub', external: true }}
+      cta={{ href: defi.repo, label: 'See the protocol on GitHub', external: true }}
     >
       <SceneChain chain={chain} defiRepo={defi.repo} mev={{ name: mev.name, status: mev.statusLabel }} />
     </Chapter>
@@ -99,17 +108,15 @@ const [w1, w2, w3] = site.finance.headline;
       scene="aviation"
       id="ch-aviation"
       kicker="04 · Aviation"
-      title="Route, weather and the math behind a flight."
-      lede="Instrument-rated commercial pilot. This is the route on the Aviation page: Buenos Aires, Lynchburg, Lehigh Valley, as two great-circle legs."
+      title="Instrument-rated pilot: 220+ hours, Buenos Aires to Pennsylvania"
+      lede="Commercial pilot with an instrument rating (ANAC, Argentina). This is the route on the Aviation page, Buenos Aires, Lynchburg, Lehigh Valley, as two great-circle legs."
       stat={stat('flight-hours')}
       cta={{ href: withBase('/aviation/'), label: 'Open the aviation view', mode: 'aviation' }}
     >
       <SceneFlight flight={flight} metar={metar} />
     </Chapter>
 
-    <Doors candles={doorCandles.svg} about={term.about} metar={metar} />
     <ContactRow />
-    <MotionToggle />
   </div>
 </LandingLayout>
 

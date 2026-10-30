@@ -15,14 +15,16 @@ interface Props {
 }
 
 const { candles, about, metar } = Astro.props;
+// Plain-language names for the doors; the view names stay on the switcher and on the pages themselves.
+const verbs: Record<string, string> = { aviation: 'Fly the route', terminal: 'Open the shell', finance: 'Read the letter' };
 const modes = enabledModes();
 const tokens = metarTokens(metar.raw);
 ---
 
 <section class="views" id="views" aria-labelledby="views-h">
   <div class="views-inner">
-    <h2 id="views-h">Choose how to read it</h2>
-    <p class="views-lead">The same facts, laid out three ways. Pick one; the switcher at the top right changes it any time.</p>
+    <h2 id="views-h">Or read it your way</h2>
+    <p class="views-lead">The same facts, laid out three ways. Pick one; the menu at the top right switches any time.</p>
     <ul class="doors">
       {
         modes.map((m) => (
@@ -49,11 +51,12 @@ const tokens = metarTokens(metar.raw);
                 )}
               </span>
               <span class="door-body">
-                <span class="door-name" id={`door-${m.id}-n`}>{m.label}</span>
+                <span class="door-kicker">{m.label} view</span>
+                <span class="door-name">{verbs[m.id] ?? m.label}</span>
                 <span class="door-promise" id={`door-${m.id}-p`}>{m.promise}</span>
-                <span class="inside-h">Inside</span>
+                <span class="inside-h">What you will find</span>
                 <span class="inside-list">{m.inside.map((x) => <span class="inside-item">{x}</span>)}</span>
-                <span class="door-go" aria-hidden="true">Open {m.label}</span>
+                <span class="door-go" aria-hidden="true">Open the {m.label} view</span>
               </span>
             </a>
           </li>
