@@ -116,6 +116,6 @@ export function metarPreview() {
     stamp: utcStamp(wx.observedAt),
     sample: wx.sample,
     // Real snapshots say so; one older than six hours when built is called the last snapshot, not the latest.
-    label: wx.sample ? 'Sample METAR (format demo)' : age > STALE_MS ? 'Last snapshot' : 'Snapshot',
+    label: wx.sample ? 'Sample METAR (format demo)' : age > STALE_MS ? 'Last observation' : 'Observed',
   };
 }

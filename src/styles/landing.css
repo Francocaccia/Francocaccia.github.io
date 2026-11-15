@@ -304,7 +304,7 @@ main:has(> .landing) {
   min-width: 0;
   min-height: 52px;
   padding: 0 16px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid #66727d; /* 3:1 against the page, so the field's edge is visible (WCAG 1.4.11) */
   border-radius: var(--radius);
   background: var(--bg-raised);
   color: var(--fg);
@@ -896,6 +896,11 @@ html:not(.js) .ask-out,
 }
 
 .motion-toggle[hidden] { display: none; }
+
+/* With reduced motion set at the system level nothing moves by itself, so there is nothing to pause. */
+@media (prefers-reduced-motion: reduce) {
+  .motion-toggle { display: none; }
+}
 .motion-toggle:hover { background: var(--bg-hover); }
 
 /* ---- motion --------------------------------------------------------------------------------------------- */

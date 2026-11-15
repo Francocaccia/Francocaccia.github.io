@@ -81,7 +81,7 @@ export function faq(): Answer[] {
     {
       id: 'looking',
       question: 'What is he looking for?',
-      keys: 'looking job role roles hire hiring open available want seeking opportunity',
+      keys: 'looking job role roles hire hiring open available want seeking opportunity based location live lives city country where',
       text: `${site.openTo} Based in ${site.location}.`,
       links: email ? [{ label: 'Get in touch', href: `mailto:${email}` }] : [],
     },
