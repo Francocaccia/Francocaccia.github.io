@@ -56,16 +56,6 @@ main:has(> .landing) {
   color: var(--bg);
 }
 
-.chip {
-  border-color: var(--link);
-  border-radius: 999px;
-  color: var(--link);
-}
-
-.chip[hidden] {
-  display: none;
-}
-
 .muted,
 .note {
   color: var(--fg-muted);
@@ -365,7 +355,7 @@ main:has(> .landing) {
 .ask-out h3 { margin: 0 0 8px; font-size: 1.125rem; }
 .ask-out p { margin: 0 0 12px; }
 .ask-hint { color: var(--fg-muted); }
-.ask-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+.ask-out .ask-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
 
 /* The same answers, as a plain list: all there is without JavaScript, and kept out of sight once the bar works. */
 .ask-list { margin-top: 8px; }
@@ -974,8 +964,6 @@ html:not(.js) .ask-out,
      fallback where scroll-driven animations are missing). Without JavaScript nothing is hidden. */
   html:where(.js):not([data-motion='off']) .chapter .fcz-wick,
   html:where(.js):not([data-motion='off']) .chapter .fcz-body {
-    transform-box: fill-box;
-    transform-origin: 50% 100%;
     animation: grow 0.6s ease-out both paused;
     animation-delay: calc(var(--i, 0) * 28ms);
   }
@@ -1011,9 +999,14 @@ html:not(.js) .ask-out,
     html:not([data-motion='off']) .chapter {
       view-timeline: --ch block;
     }
+    html:not([data-motion='off']) .chapter .fcz-wick,
+    html:not([data-motion='off']) .chapter .fcz-body {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+    }
 
     /* Pinned stages need a screen tall and wide enough to hold the words and the scene side by side. */
-    @media (min-width: 900px) and (min-height: 640px) {
+    @media (min-width: 900px) and (min-height: 45rem) {
       html:not([data-motion='off']) .chapter:not([data-pin='false']) {
         height: 260svh;
         padding: 0;
@@ -1029,7 +1022,7 @@ html:not(.js) .ask-out,
 
     /* Phones and short screens: nothing is pinned. The scene itself is the timeline, so it plays while it
        crosses the screen, and the words rise as they arrive. */
-    @media (max-width: 899px), (max-height: 639px) {
+    @media (max-width: 899px), (max-height: 44.99rem) {
       html:not([data-motion='off']) .chapter {
         view-timeline: none;
       }
@@ -1053,7 +1046,7 @@ html:not(.js) .ask-out,
       animation-timeline: --ch;
       animation-range: cover 22% cover 34%;
     }
-    @media (max-width: 899px), (max-height: 639px) {
+    @media (max-width: 899px), (max-height: 44.99rem) {
       html:not([data-motion='off']) .chapter .copy {
         animation-timeline: view();
         animation-range: entry 5% entry 70%;

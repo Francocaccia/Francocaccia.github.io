@@ -21,6 +21,9 @@ async function start(root: HTMLElement) {
   const screen = root.querySelector<HTMLElement>('[data-screen]')!;
   const form = root.querySelector<HTMLFormElement>('[data-form]')!;
   const input = root.querySelector<HTMLInputElement>('[data-input]')!;
+  // The shell stores nothing. A fixed field name is what lets a browser's autofill remember what was typed, so the
+  // field gets a throwaway name on every load.
+  input.name = `c${Math.random().toString(36).slice(2, 10)}`;
   const prompt = root.querySelector<HTMLElement>('[data-ps]')!;
   const title = root.querySelector<HTMLElement>('[data-title]')!;
   const termBox = root.querySelector<HTMLElement>('.term')!;

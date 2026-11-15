@@ -30,7 +30,6 @@ if (toggle) {
   const label = toggle.querySelector<HTMLElement>('.mt-label')!;
   const paint = () => {
     const off = root.dataset.motion === 'off';
-    toggle.setAttribute('aria-pressed', String(off));
     label.textContent = off ? 'Resume motion' : 'Pause motion';
   };
   toggle.hidden = false;
@@ -83,16 +82,41 @@ if (ask) {
   const out = ask.querySelector<HTMLElement>('[data-ask-out]')!;
   const items = [...ask.querySelectorAll<HTMLElement>('[data-ask-a]')];
   const chips = [...ask.querySelectorAll<HTMLButtonElement>('[data-ask-q]')];
-  const words = (text: string) => text.toLowerCase().match(/[a-z0-9+#]+/g) ?? [];
+  // Lowercase, accents removed, so "r\u00e9sum\u00e9" finds "resume". Words that carry no meaning are ignored.
+  const words = (text: string) =>
+    text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .match(/[a-z0-9+#]+/g) ?? [];
+  const STOP = new Set('a an and are at be can did do does for has have he her him his how i in is it me my of on or the this to was what where which who with you your'.split(' '));
+  const stem = (w: string) => (w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w);
+
+  const say = (text: string, link = false) => {
+    chips.forEach((c) => c.setAttribute('aria-pressed', 'false'));
+    const p = document.createElement('p');
+    p.textContent = text;
+    const parts: HTMLElement[] = [p];
+    if (link && ask.dataset.terminal) {
+      const a = document.createElement('a');
+      a.className = 'btn';
+      a.href = ask.dataset.terminal;
+      a.dataset.mode = 'terminal';
+      a.textContent = 'Open the terminal view';
+      const wrap = document.createElement('p');
+      wrap.className = 'ask-links';
+      wrap.append(a);
+      parts.push(wrap);
+    }
+    out.replaceChildren(...parts);
+  };
 
   const show = (item: HTMLElement | null) => {
-    chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.askQ === item?.dataset.askA)));
     if (!item) {
-      const p = document.createElement('p');
-      p.textContent = 'I only have written answers for the questions above. Try one of them, or open the terminal view, which can search everything.';
-      out.replaceChildren(p);
+      say('I only have written answers for the questions above. Try one of them, or open the terminal view, which can search everything.', true);
       return;
     }
+    chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.askQ === item.dataset.askA)));
     const title = document.createElement('h3');
     title.textContent = item.querySelector('summary')!.textContent;
     out.replaceChildren(title, ...[...item.querySelector('.ask-a')!.cloneNode(true).childNodes]);
@@ -103,8 +127,8 @@ if (ask) {
     let best: HTMLElement | null = null;
     let top = 0;
     for (const item of items) {
-      const keys = words(`${item.dataset.keys} ${item.querySelector('summary')!.textContent}`);
-      const score = typed.filter((w) => w.length > 1 && keys.some((k) => k === w || (w.length > 3 && k.startsWith(w)))).length;
+      const keys = words(item.dataset.keys ?? '').map(stem);
+      const score = typed.filter((w) => w.length > 1 && !STOP.has(w) && keys.some((k) => k === stem(w) || (w.length > 3 && k.startsWith(stem(w))))).length;
       if (score > top) {
         top = score;
         best = item;
@@ -118,5 +142,6 @@ if (ask) {
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (input.value.trim()) show(find(input.value));
+    else say('Type a question, or pick one of the questions above.');
   });
 }

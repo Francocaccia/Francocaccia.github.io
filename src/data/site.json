@@ -195,7 +195,7 @@
     { "id": "defi-coverage", "value": "100%", "label": "test coverage, DeFi lending", "source": "projects: DeFi lending protocol" },
     { "id": "hours-saved", "value": "5+", "label": "hours saved a week, equity reports", "source": "projects: equity report generator" },
     { "id": "fund-beta", "value": "0.6", "label": "beta, student-managed fund", "source": "experience: Quant Analyst & CS Intern, student-managed fund" },
-    { "id": "languages", "value": "4", "label": "languages", "source": "languages" }
+    { "id": "languages", "value": "4", "label": "spoken languages", "source": "languages" }
   ],
   "finance": {
     "headline": ["Quant.", "Software.", "Pilot."],

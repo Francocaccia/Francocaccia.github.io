@@ -100,13 +100,17 @@ async function start(root: HTMLElement) {
     coasting = 0;
   };
   let dragging = false;
+  let pointerId = -1;
   let last = { x: 0, y: 0 };
   let moves: { t: number; x: number; y: number }[] = [];
 
   stage.addEventListener('pointerdown', (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (dragging) return; // a second finger does not take over the drag
     stopCoasting();
+    cancelAnimationFrame(tween);
     dragging = true;
+    pointerId = event.pointerId;
     last = { x: event.clientX, y: event.clientY };
     moves = [{ t: performance.now(), x: event.clientX, y: event.clientY }];
     try {
@@ -117,7 +121,7 @@ async function start(root: HTMLElement) {
     stage.classList.add('is-dragging');
   });
   stage.addEventListener('pointermove', (event) => {
-    if (!dragging) return;
+    if (!dragging || event.pointerId !== pointerId) return;
     const r = globeRadius(width, height, zoom);
     setView(dragView(view, event.clientX - last.x, event.clientY - last.y, r));
     last = { x: event.clientX, y: event.clientY };
@@ -125,8 +129,8 @@ async function start(root: HTMLElement) {
     moves.push({ t: now, x: event.clientX, y: event.clientY });
     moves = moves.filter((m) => now - m.t <= 100);
   });
-  const release = () => {
-    if (!dragging) return;
+  const release = (event: PointerEvent) => {
+    if (!dragging || event.pointerId !== pointerId) return;
     dragging = false;
     stage.classList.remove('is-dragging');
     if (reduced.matches || moves.length < 2) return;
@@ -141,7 +145,7 @@ async function start(root: HTMLElement) {
     let vLat = ((b.y - a.y) * k) / dt;
     let before = performance.now();
     const step = (now: number) => {
-      const dtMs = Math.min(now - before, 50);
+      const dtMs = Math.max(0, Math.min(now - before, 50));
       before = now;
       // inertiaVelocity works per frame (16.7 ms); scale so the decay does not depend on the frame rate.
       vLon = inertiaVelocity(vLon * 16.7, dtMs, false) / 16.7;
@@ -167,6 +171,7 @@ async function start(root: HTMLElement) {
     (event) => {
       if (!event.ctrlKey) return;
       event.preventDefault();
+      cancelAnimationFrame(tween);
       setZoom(zoom * Math.exp(-event.deltaY * 0.01));
     },
     { passive: false },
@@ -203,6 +208,7 @@ async function start(root: HTMLElement) {
 
   function act(name: string) {
     stopCoasting();
+    if (name !== 'reset') cancelAnimationFrame(tween);
     switch (name) {
       case 'left': return setView(nudgeView(view, -10, 0));
       case 'right': return setView(nudgeView(view, 10, 0));

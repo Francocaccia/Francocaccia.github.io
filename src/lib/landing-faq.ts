@@ -21,6 +21,8 @@ export interface Answer {
   links: AnswerLink[];
 }
 
+const month = (iso: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T00:00:00Z`).toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : iso;
 const first = (text: string) => text.split('. ')[0].replace(/\.$/, '') + '.';
 const list = (items: string[]) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
 
@@ -40,15 +42,16 @@ export function faq(): Answer[] {
   const active = site.certifications.filter((c) => c.status === 'active');
   const pending = site.certifications.filter((c) => c.status === 'in-progress');
   const certLine = (c: (typeof site.certifications)[number]) =>
-    `${c.name}${'issuer' in c ? ` (${c.issuer})` : ''}${'detail' in c && c.detail ? (/^[0-9]/.test(c.detail) ? ` with ${c.detail}` : `, ${c.detail}`) : ''}`;
+    `${c.name}${'issuer' in c ? ` (${c.issuer})` : ''}${'detail' in c && c.detail ? `, ${c.detail}` : ''}`;
+  const named = (c: (typeof site.certifications)[number]) => `${c.name}${'issuer' in c ? ` (${c.issuer})` : ''}`;
   const school = (e: (typeof site.education)[number]) => `${e.degree}, ${e.school}${'place' in e && e.place ? `, ${e.place}` : ''} (${e.period})`;
 
   return [
     {
       id: 'built',
       question: 'What has he built?',
-      keys: 'built build made make project projects work bot code github shipped',
-      text: `${atb.name}: ${first(atb.summary)} ${sqr.name}: ${first(sqr.summary)} ${defi.name}: ${first(defi.summary)} And the C++ core this site runs on.`,
+      keys: 'built build made make project projects code github shipped defi crypto solidity lending protocol blockchain equity report',
+      text: `${atb.name}: ${first(atb.summary)} ${sqr.name}: ${first(sqr.summary)} ${defi.name}: ${first(defi.summary)}`,
       links: [
         { label: 'Read the finance view', href: withBase('/finance/'), mode: 'finance' },
         { label: 'GitHub', href: site.links.github, external: true },
@@ -57,14 +60,14 @@ export function faq(): Answer[] {
     {
       id: 'pilot',
       question: 'Is he a pilot?',
-      keys: 'pilot fly flying flight aviation license licenses hours instrument rating faa plane',
-      text: `Yes. ${list(active.filter((c) => c.track === 'aviation').map(certLine))}. In progress: ${list(pending.filter((c) => c.track === 'aviation').map((c) => c.name))}.`,
+      keys: 'pilot fly flying flight aviation license licenses licence certification certifications cert hours instrument rating faa anac plane weather metar',
+      text: `Yes. ${active.filter((c) => c.track === 'aviation').map(certLine).join('; ')}. In progress: ${list(pending.filter((c) => c.track === 'aviation').map(named))}.`,
       links: [{ label: 'Open the aviation view', href: withBase('/aviation/'), mode: 'aviation' }],
     },
     {
       id: 'studying',
-      question: 'What is he studying?',
-      keys: 'study studying school degree education university lehigh lynchburg masters master bachelor college',
+      question: 'Where did he study?',
+      keys: 'study studying studied school degree education university lehigh lynchburg masters master bachelor college',
       text: `${site.education.map(school).join('. ')}.`,
       links: [],
     },
@@ -85,15 +88,15 @@ export function faq(): Answer[] {
     {
       id: 'skills',
       question: 'Which languages and tools?',
-      keys: 'language languages skill skills tools stack tech technologies speak spanish english portuguese mandarin python go',
-      text: `Languages spoken: ${site.languages.map((l) => `${l.name} (${l.level})`).join(', ')}. Tools: ${site.technicalSkills.slice(0, 14).join(', ')}, and more on the resume.`,
-      links: [{ label: 'Try `skills` in the terminal', href: withBase('/terminal/'), mode: 'terminal' }],
+      keys: 'language languages skill skills tools stack tech technologies speak spanish english portuguese mandarin python go c++ sql',
+      text: `Languages spoken: ${site.languages.map((l) => `${l.name} (${l.level})`).join(', ')}. Tools: ${site.technicalSkills.slice(0, 14).join(', ')}.`,
+      links: [{ label: 'Try skills in the terminal', href: withBase('/terminal/'), mode: 'terminal' }],
     },
     {
       id: 'bot',
       question: 'How does the bot do?',
       keys: 'bot trading performance return results stats finance autotradingbot paper returns profit',
-      text: `It trades on paper only, and it has been tracked since ${site.bot.trackingSince}. Its results are shown only as percentages against the S&P 500 and a 60/40 portfolio, and it is too early to read anything into them. The Finance view has the figures and the limits written in code.`,
+      text: `It trades on paper only, and it has been tracked since ${month(site.bot.trackingSince)}. Its results are shown only as percentages against the S&P 500 and a 60/40 portfolio. The Finance view has the benchmarks and the limits written in code.`,
       links: [{ label: 'Open the finance view', href: withBase('/finance/'), mode: 'finance' }],
     },
     {
@@ -106,7 +109,7 @@ export function faq(): Answer[] {
     {
       id: 'contact',
       question: 'How do I contact him?',
-      keys: 'contact email reach linkedin github resume cv message hire talk',
+      keys: 'contact email reach touch linkedin github resume cv message talk',
       text: `${email ? `Email ${email}. ` : ''}GitHub and LinkedIn are below${resume ? ', and the resume is a PDF' : ''}.`,
       links: [
         ...(email ? [{ label: 'Email', href: `mailto:${email}` }] : []),
