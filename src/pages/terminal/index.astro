@@ -96,6 +96,7 @@ const prompt = 'visitor@portfolio:~$';
           <TermLines lines={projects.lines} />
           <div class="term-line term-echo"><span class="ps">{prompt}</span> stats</div>
           <div data-stats-block aria-live="off"><TermLines lines={stats.lines} /></div>
+          <noscript><div class="term-line">Without JavaScript this page cannot reach the bot, so the numbers above stay as placeholders.</div></noscript>
           <div class="term-line term-echo"><span class="ps">{prompt}</span> experience</div>
           <TermLines lines={experience.lines} />
         </div>

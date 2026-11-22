@@ -30,7 +30,7 @@ const tokens = metarTokens(metar.raw);
         modes.map((m) => (
           <li>
             <a class={`door door-${m.id}`} href={withBase(m.path)} data-mode={m.id}>
-              <span class="preview" aria-hidden="true">
+              <div class="preview" aria-hidden="true">
                 {m.id === 'finance' && (
                   <span class="pv pv-fin">
                     <span class="pv-svg" set:html={candles} />
@@ -38,10 +38,10 @@ const tokens = metarTokens(metar.raw);
                   </span>
                 )}
                 {m.id === 'terminal' && (
-                  <span class="pv pv-term">
+                  <div class="pv pv-term">
                     <span class="pv-line"><span class="pv-ps">visitor@portfolio:~$</span> cat about.md</span>
-                    <span class="pv-out"><TermLines lines={about} /></span>
-                  </span>
+                    <div class="pv-out"><TermLines lines={about} /></div>
+                  </div>
                 )}
                 {m.id === 'aviation' && (
                   <span class="pv pv-avi">
@@ -49,7 +49,7 @@ const tokens = metarTokens(metar.raw);
                     <span class="pv-tag">{metar.label} · {metar.stamp}</span>
                   </span>
                 )}
-              </span>
+              </div>
               <span class="door-body">
                 <span class="door-kicker">{m.label} view</span>
                 <span class="door-name">{verbs[m.id] ?? m.label}</span>
